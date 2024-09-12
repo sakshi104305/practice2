@@ -1,0 +1,144 @@
+************************ Top of Data ******************************
+  ID DIVISION.                                                     
+  PROGRAM-ID. CBLPGM03.                                            
+  AUTHOR. SAKSHI.                                                  
+  DATE-WRITTEN. TODAY.                                             
+  DATE-COMPILED. TODAY.                                            
+ **************************************************************    
+ * READ MASTER1 FILE AND CHANGE ACT/INCAT USER BASED ON LAST       
+ * TRANACTION HAPPENED 60 DAYS OR NOT.                             
+ **************************************************************    
+                                                                   
+  ENVIRONMENT DIVISION.                                            
+  INPUT-OUTPUT SECTION.                                            
+  FILE-CONTROL.                                                    
+      SELECT MASTFIL1 ASSIGN TO INDD1                              
+      ORGANIZATION IS SEQUENTIAL                                   
+      ACCESS IS SEQUENTIAL                                         
+      FILE STATUS IS WS-FS1.                                       
+      SELECT MASTFIL2 ASSIGN TO OUTDD1                             
+     ORGANIZATION IS SEQUENTIAL                       
+     ACCESS IS SEQUENTIAL                             
+     FILE STATUS IS WS-FS2.                           
+                                                      
+ DATA DIVISION.                                       
+ FILE SECTION.                                        
+ FD MASTFIL1                                          
+     LABEL RECORDS ARE STANDARD.                      
+ COPY MASTCPY.                                        
+ FD MASTFIL2                                          
+     LABEL RECORDS ARE STANDARD.                      
+ COPY MASTCPY                                         
+     REPLACING WS-MASTER-LAYOUT BY WS-MASTER.         
+                                                      
+ WORKING-STORAGE SECTION.                             
+ 01 WS-VALID-REC          PIC X(1).                   
+ 01 WS-DATE-INT           PIC 9(8).                   
+ 01 WS-DATE-2MON-INT      PIC 9(8).                   
+ 01 WS-DATE               PIC X(8).                   
+ 01 WS-DATE-2MON          PIC 9(8).                     
+ 01 DATE-IN-DAYS          PIC 9(8).                     
+ 01 WS-DATE-2MON-ALP      PIC X(8).                     
+ 01 WS-END-OF-FIL         PIC X(1).                     
+ 01 WS-FS1                PIC 9(2).                     
+ 01 WS-FS2                PIC 9(2).                     
+ 01 WS-ABENDPGM           PIC X(8) VALUE 'ABENDPGM'.    
+                                                        
+ PROCEDURE DIVISION.                                    
+ 0000-MAIN-PARA.                                        
+     DISPLAY 'CBLPGM03 STARTED'.                        
+     PERFORM 1000-INITIALIZATION-PARA THRU 1000-EXIT.   
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.             
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL     
+                            WS-END-OF-FIL = 'Y'.        
+     CLOSE MASTFIL1.                                    
+     CLOSE MASTFIL2.                                    
+     STOP RUN.                                          
+ 1000-INITIALIZATION-PARA.                              
+     MOVE 'N' TO WS-END-OF-FIL.                            
+     MOVE ZERO TO WS-FS1,                                  
+                  WS-FS2.                                  
+     INITIALIZE WS-DATE-INT,                               
+                WS-DATE-2MON-INT,                          
+                WS-DATE,                                   
+                WS-DATE-2MON.                              
+     OPEN INPUT MASTFIL1.                                  
+        IF WS-FS1 = 00                                     
+        CONTINUE                                           
+        ELSE                                               
+        DISPLAY ' ERROR IN OPENING INPUT FIL.' WS-FS1      
+        END-IF.                                            
+     OPEN OUTPUT MASTFIL2.                                 
+        IF WS-FS1 = 00                                     
+        CONTINUE                                           
+        ELSE                                               
+        DISPLAY ' ERROR IN OPENING OUTPUT FIL.' WS-FS2     
+        END-IF.                                            
+ 1000-EXIT. EXIT.                                        
+ 2000-READ-PARA.                                         
+     READ MASTFIL1                                       
+       AT END                                            
+       MOVE 'Y' TO WS-END-OF-FIL.                        
+       IF WS-FS1 = 00                                    
+       CONTINUE                                          
+       ELSE                                              
+       DISPLAY 'ERROR IN READIND INPUT FILE:' WS-FS1     
+       END-IF.                                           
+ 2000-EXIT. EXIT.                                        
+ 3000-PROCESS-PARA.                                      
+*      MOVE 'Y' TO WS-VALID-REC.                         
+       PERFORM 3100-GET-DATE-PARA THRU 3100-EXIT.        
+       PERFORM 3200-VALID-PARA THRU 3200-EXIT.           
+       PERFORM 3300-MOVE-WRITE-PARA THRU 3300-EXIT.      
+       IF WS-END-OF-FIL = 'N'                            
+       PERFORM 2000-READ-PARA THRU 2000-EXIT             
+       END-IF.                                           
+ 3000-EXIT. EXIT.                                                 
+ 3100-GET-DATE-PARA.                                              
+     ACCEPT WS-DATE-2MON.                                         
+*    MOVE FUNCTION CURRENT-DATE TO WS-DATE.                       
+*    MOVE WS-DATE TO WS-DATE-INT.                                 
+*    COMPUTE DATE-IN-DAYS =                                       
+*                     FUNCTION INTEGER-OF-DATE(WS-DATE-INT).      
+*    COMPUTE WS-DATE-2MON-INT = DATE-IN-DAYS - 60.                
+*    COMPUTE WS-DATE-2MON =                                       
+*                 FUNCTION DATE-OF-INTEGER(WS-DATE-2MON-INT)      
+*    MOVE WS-DATE-2MON TO WS-DATE-2MON-ALP.                       
+*    DISPLAY '2MONTH OLD DATE: ' WS-DATE-2MON-ALP.                
+ 3100-EXIT. EXIT.                                                 
+ 3200-VALID-PARA.                                                 
+     IF LAST-BILL-DATE OF WS-MASTER-LAYOUT >= WS-DATE-2MON        
+        MOVE 'A' TO CUST-ACTIVE-IND OF WS-MASTER                  
+     ELSE                                                         
+        MOVE 'I' TO CUST-ACTIVE-IND OF WS-MASTER                  
+     END-IF.                                                      
+ 3200-EXIT. EXIT.                                       
+ 3300-MOVE-WRITE-PARA.                                  
+     MOVE CARD-NUMBER OF WS-MASTER-LAYOUT TO            
+              CARD-NUMBER OF WS-MASTER.                 
+     MOVE CUST-NAME OF WS-MASTER-LAYOUT TO              
+              CUST-NAME OF WS-MASTER.                   
+     MOVE CARD-LIMIT OF WS-MASTER-LAYOUT TO             
+              CARD-LIMIT OF WS-MASTER.                  
+     MOVE PREVIOUS-DUE OF WS-MASTER-LAYOUT TO           
+              PREVIOUS-DUE OF WS-MASTER.                
+     MOVE PREVIOUS-DUE-PAID OF WS-MASTER-LAYOUT TO      
+              PREVIOUS-DUE-PAID OF WS-MASTER.           
+     MOVE CARD-TYPE OF WS-MASTER-LAYOUT TO              
+              CARD-TYPE OF WS-MASTER.                   
+     MOVE REWARD-POINT-CODE OF WS-MASTER-LAYOUT TO      
+              REWARD-POINT-CODE OF WS-MASTER.           
+     MOVE CARD-EXPIRE-DATE OF WS-MASTER-LAYOUT TO       
+              CARD-EXPIRE-DATE OF WS-MASTER.            
+     MOVE LAST-BILL-DATE OF WS-MASTER-LAYOUT TO         
+         LAST-BILL-DATE OF WS-MASTER.                   
+     WRITE WS-MASTER.                                   
+        EVALUATE WS-FS2                                 
+        WHEN '00'                                       
+        CONTINUE                                        
+        WHEN OTHER                                      
+        DISPLAY 'ERROR IN WRITING OUTPUT FILE:'  WS-FS2 
+        END-EVALUATE.                                   
+ 3300-EXIT. EXIT.                                       
+
+

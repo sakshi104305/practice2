@@ -1,0 +1,103 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM04.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+***************************************************************** 
+*ACCEPT CREDIT CARD DETAILS AND WRITE IT IN PS FILE.              
+***************************************************************** 
+                                                                  
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT CREDFIL ASSIGN TO DD1                                 
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS IS SEQUENTIAL                                         
+     FILE STATUS IS WS-FS1.                                       
+                                                                  
+ DATA DIVISION.                                 
+ FILE SECTION.                                  
+ FD CREDFIL                                     
+     LABEL RECORDS ARE STANDARD.                
+ COPY TRANFIL.                                  
+                                                
+ WORKING-STORAGE SECTION.                       
+ 01 WS-CRED-IN.                                 
+    05 CARD-NUMBER           PIC X(5).          
+    05 TRANS-POS-DETAILS     PIC X(15).         
+    05 TRANS-TYPE            PIC X(10).         
+    05 TRANS-STATUS          PIC X(10).         
+    05 TRANS-AMOUNT          PIC S9(5)V9(2).    
+    05 TRANS-DATE            PIC X(8).          
+ 01 WS-FS1           PIC X(2).                  
+ 01 WS-END-OF-REC    PIC X(1).                  
+ 01 WS-IN-REC        PIC 9(2).                  
+ 01 WS-OUT-REC       PIC 9(2).                  
+ 01 WS-ABENDPGM      PIC X(8) VALUE 'ABENDPGM'. 
+                                                       
+ PROCEDURE DIVISION.                                   
+ 0000-MAIN-PARA.                                       
+     DISPLAY 'CBLPGM04 STARTED'.                       
+     PERFORM 1000-INITIALIZATION-PARA THRU 1000-EXIT.  
+     PERFORM 2000-ACCEPT-PARA THRU 2000-EXIT.          
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL    
+                             WS-END-OF-REC = 'Y'.      
+     CLOSE CREDFIL.                                    
+     DISPLAY 'TOTAL INPUT REC:' WS-IN-REC.             
+     DISPLAY 'TOTAL OUTPUT REC:' WS-OUT-REC.           
+     STOP RUN.                                         
+                                                       
+ 1000-INITIALIZATION-PARA.                             
+     MOVE SPACE TO WS-FS1.                             
+     MOVE ZERO TO WS-IN-REC,                           
+                  WS-OUT-REC.                          
+     OPEN OUTPUT CREDFIL.                              
+     IF WS-FS1 = '00'                                  
+       CONTINUE                                             
+     ELSE                                                   
+       DISPLAY 'ERROR IN OPENING OUTPUT FILE:' WS-FS1       
+     END-IF.                                                
+     INITIALIZE WS-TRAN-LAYOUT.                             
+     MOVE 'N' TO WS-END-OF-REC.                             
+ 1000-EXIT. EXIT.                                           
+                                                            
+ 2000-ACCEPT-PARA.                                          
+     ACCEPT CARD-NUMBER OF WS-CRED-IN.                      
+     ACCEPT TRANS-POS-DETAILS OF WS-CRED-IN.                
+     ACCEPT TRANS-TYPE OF WS-CRED-IN.                       
+     ACCEPT TRANS-STATUS OF WS-CRED-IN.                     
+     ACCEPT TRANS-AMOUNT OF WS-CRED-IN.                     
+     ACCEPT TRANS-DATE OF WS-CRED-IN.                       
+ 2000-EXIT. EXIT.                                           
+                                                            
+ 3000-PROCESS-PARA.                                         
+     PERFORM 3100-MOVE-WRITE-PARA THRU 3100-EXIT.           
+     ACCEPT WS-END-OF-REC.                           
+     IF WS-END-OF-REC = 'N'                          
+     PERFORM 2000-ACCEPT-PARA THRU 2000-EXIT         
+     END-IF.                                         
+ 3000-EXIT. EXIT.                                    
+                                                     
+ 3100-MOVE-WRITE-PARA.                               
+     MOVE CARD-NUMBER OF WS-CRED-IN TO               
+          CARD-NUMBER OF WS-TRAN-LAYOUT.             
+     MOVE TRANS-POS-DETAILS OF WS-CRED-IN TO         
+     TRANS-POS-DETAILS OF WS-TRAN-LAYOUT.            
+     MOVE TRANS-TYPE OF WS-CRED-IN TO                
+     TRANS-TYPE OF WS-TRAN-LAYOUT.                   
+     MOVE TRANS-STATUS OF WS-CRED-IN TO              
+     TRANS-STATUS OF WS-TRAN-LAYOUT.                 
+     MOVE TRANS-AMOUNT OF WS-CRED-IN TO              
+     TRANS-AMOUNT OF WS-TRAN-LAYOUT.                 
+     MOVE TRANS-DATE OF WS-CRED-IN TO                
+     TRANS-DATE OF WS-TRAN-LAYOUT.                   
+     WRITE WS-TRAN-LAYOUT.                                        
+     IF WS-FS1 = 00                                               
+     ADD +1 TO WS-OUT-REC                                         
+     ELSE                                                         
+     DISPLAY 'ERROR IN WRITING OUTPUT FILE:' WS-FS1               
+     END-IF.                                                      
+ 3100-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************

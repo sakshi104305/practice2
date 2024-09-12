@@ -1,0 +1,125 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. ARRAYIDX.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+***************************************************************** 
+*USE SEARCH ALL OR SEARCH TO FIND A VALUE IN OCCUR TABLE.         
+***************************************************************** 
+                                                                  
+ DATA DIVISION.                                                   
+ WORKING-STORAGE SECTION.                                         
+ 01 WS-SHOPPING.                                                  
+     05 WS-STORE      OCCURS 05 TIMES ASCENDING KEY WS-STORE-ID   
+                            INDEXED BY IDX1.                      
+        10 WS-STORE-ID        PIC X(4).                           
+        10 WS-PRODUCT         OCCURS 02 TIMES INDEXED BY IDX2.    
+           15 WS-PRODUCT-NAME           PIC X(8).                 
+           15 WS-PRODUCT-PRICE          PIC S9(3)V9(2).           
+                                                                  
+ PROCEDURE DIVISION.                                              
+ 0000-MAIN-PARA.                                                  
+     DISPLAY 'ARRAYIDX STARTED'.                                  
+     PERFORM 1000-ACCEPT-PARA THRU 1000-EXIT VARYING IDX1 FROM 1  
+                      BY 1 UNTIL IDX1 > 5.                        
+     PERFORM 2000-DISPLAY-PARA THRU 2000-EXIT VARYING IDX1 FROM   
+                      1 BY 1 UNTIL IDX1 > 5.                      
+*    SET IDX1 TO 1.                                               
+*    SET IDX2 TO 1.                                               
+     SEARCH ALL WS-STORE                                          
+         AT END                                                   
+         DISPLAY 'NO RECORD FOUND'                                
+           WHEN WS-STORE-ID(IDX1) = 'C003'                        
+           DISPLAY ' RECORD FOUND FOR STORE ID:' WS-STORE-ID(IDX1)
+           PERFORM 2500-DISPLAY-PARA THRU 2500-EXIT VARYING IDX2  
+                 FROM 1 BY 1 UNTIL IDX2 >2                        
+           END-SEARCH.                                            
+     STOP RUN.                                                    
+ 1000-ACCEPT-PARA.                                                
+     ACCEPT WS-STORE-ID(IDX1).                                    
+     PERFORM 1500-ACCEPT-PARA THRU 1500-EXIT VARYING IDX2 FROM 1  
+                      BY 1 UNTIL IDX2 > 2.                        
+ 1000-EXIT. EXIT.                                                 
+ 1500-ACCEPT-PARA.                                                
+     ACCEPT WS-PRODUCT-NAME(IDX1, IDX2).                          
+     ACCEPT WS-PRODUCT-PRICE(IDX1, IDX2).                         
+ 1500-EXIT. EXIT.                                                 
+ 2000-DISPLAY-PARA.                                               
+     DISPLAY WS-STORE-ID(IDX1).                                   
+     PERFORM 2500-DISPLAY-PARA THRU 2500-EXIT VARYING IDX2 FROM 1 
+                      BY 1 UNTIL IDX2 > 2.                        
+ 2000-EXIT. EXIT.                                                 
+ 2500-DISPLAY-PARA.                                               
+     DISPLAY WS-PRODUCT-NAME(IDX1, IDX2) ' : '                    
+             WS-PRODUCT-PRICE(IDX1, IDX2).                        
+ 2500-EXIT. EXIT.                                                 
+
+
+
+
+
+run jcl:
+
+
+***************************** Top of Data ******************************
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=ARRYIDX2                                                  
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//*INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.BILL,DISP=SHR                     
+//*INDD2 DD DSN=ADCDI.SAKSHI.BILL.KSDS.CLUSTER,DISP=OLD                 
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSIN DD *                                                            
+C001                                                                    
+EGG                                                                     
+03600                                                                   
+MILK                                                                    
+02300                                                                   
+C002                                                                    
+CHEES                                                                   
+07200                                                                   
+CURD                                                                    
+03400                                                                   
+C003                                                                    
+RESIN                                                                   
+31200                                                                   
+PEA                                                                     
+06600                                                                   
+C004                                                                    
+BOOK                                                                    
+02500                                                                   
+PENCIL                                                                  
+00200                                                                   
+C005                                                                    
+COVER                                                                   
+20000                                                                   
+COPY                                                                    
+03000                                                                   
+/*                                                                      
+**************************** Bottom of Data ****************************
+
+
+spool output:
+
+ARRAYIDX STARTED                      
+C001                                  
+EGG      : 03600                      
+MILK     : 02300                      
+C002                                  
+CHEES    : 07200                      
+CURD     : 03400                      
+C003                                  
+RESIN    : 31200                      
+PEA      : 06600                      
+C004                                  
+BOOK     : 02500                      
+PENCIL   : 00200                      
+C005                                  
+COVER    : 20000                      
+COPY     : 03000                      
+ RECORD FOUND FOR STORE ID:C003                                                 
+RESIN    : 31200                                                                
+PEA      : 06600                                                                
+******************************** BOTTOM OF DATA ********************************

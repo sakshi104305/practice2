@@ -1,0 +1,165 @@
+  ID DIVISION.                                                     
+  PROGRAM-ID. PSRKSDSU.                                            
+  AUTHOR. SAKSHI.                                                  
+  DATE-WRITTEN. TODAY.                                             
+  DATE-COMPILED. TODAY.                                            
+                                                                   
+ ***************************************************************** 
+ * READ A SEQ FILE AND CHECK IF DATA FOR REC IS PRESENT IN KSDS    
+ * FILE. IF SO UPDATE THE KSDS REC.                                
+ ****************************************************************  
+                                                                   
+  ENVIRONMENT DIVISION.                                            
+  INPUT-OUTPUT SECTION.                                            
+  FILE-CONTROL.                                                    
+      SELECT BILLFIL ASSIGN TO INDD1                               
+      ORGANIZATION IS SEQUENTIAL                                   
+      ACCESS IS SEQUENTIAL                                         
+      FILE STATUS IS WS-FS1.                                       
+	  SELECT BILLFILK ASSIGN TO INDD2                
+      ORGANIZATION IS INDEXED                        
+      ACCESS IS RANDOM                               
+      RECORD KEY IS CARD-NUMBER OF WS-BILL-LAYOUT    
+      FILE STATUS IS WS-FS2.                         
+                                                    
+ DATA DIVISION.                                     
+ FILE SECTION.                                      
+ FD BILLFIL                                         
+     LABEL RECORDS ARE STANDARD.                    
+ COPY BILLCPY.                                      
+ FD BILLFILK                                        
+     LABEL RECORDS ARE STANDARD.                    
+ COPY BILLCPY                                       
+     REPLACING WS-BILL-PAY BY WS-BILL-LAYOUT.       
+ WORKING-STORAGE SECTION.                           
+ 01 WS-FS1                 PIC X(2).                
+ 01 WS-FS2                 PIC X(2).                
+ 01 WS-EOF                 PIC X(1).      
+ 01 WS-IN-REC              PIC 9(2).               
+ 01 WS-OUT-REC             PIC 9(2).               
+ 01 DUE-DATE-NUM           PIC 9(8).               
+ 01 DUE-DATE-NUM-20        PIC 9(8).               
+ 01 DATE-IN-DAYS           PIC 9(8).               
+ 01 DATE-IN-DAYS-20        PIC 9(8).               
+                                                   
+ PROCEDURE DIVISION.                               
+ 0000-MAIN-PARA.                                   
+     DISPLAY 'PSRKSDSU STARTED'.                   
+     PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.  
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.        
+ 3000-CLOSE-PARA.                                  
+     CLOSE BILLFIL.                                
+     CLOSE BILLFILK.                               
+     DISPLAY 'WS-IN-REC :' WS-IN-REC.              
+     DISPLAY 'WS-OUT-REC : ' WS-OUT-REC.           
+     STOP RUN.                                     
+                                                   
+ 1000-INITIALIZE-PARA.                                         
+     MOVE 'N' TO WS-EOF.                                       
+     MOVE SPACE TO WS-FS1,                                     
+                   WS-FS2.                                     
+     MOVE ZERO TO WS-IN-REC,                                   
+                  WS-OUT-REC.                                  
+     OPEN INPUT BILLFIL.                                       
+     EVALUATE WS-FS1                                           
+        WHEN '00'                                              
+        CONTINUE                                               
+        WHEN OTHER                                             
+        DISPLAY  'ERROR IS OPENING INPUT FILE.' WS-FS1         
+     END-EVALUATE.                                             
+     OPEN I-O BILLFILK.                                        
+     EVALUATE WS-FS2                                           
+        WHEN '00'                                              
+        CONTINUE                                               
+        WHEN OTHER                                             
+        DISPLAY  'ERROR IS OPENING I-O FILE.' WS-FS2           
+     END-EVALUATE.                                      
+ 1000-EXIT. EXIT.                                       
+ 2000-READ-PARA.                                        
+      PERFORM 2010-READ-BILL-PARA THRU 2010-EXIT.       
+      PERFORM 2020-READ-BILLK-PARA THRU 2020-EXIT.      
+ 2000-EXIT. EXIT.                                       
+ 2010-READ-BILL-PARA.                                   
+      READ BILLFIL                                      
+         AT END                                         
+         MOVE 'Y' TO WS-EOF.                            
+ 2010-EXIT. EXIT.                                       
+ 2020-READ-BILLK-PARA.                                  
+      MOVE CARD-NUMBER OF WS-BILL-PAY TO CARD-NUMBER OF 
+                                     WS-BILL-LAYOUT.    
+      READ BILLFILK                                     
+        IF WS-FS2 = '00' AND WS-EOF = 'N'               
+        PERFORM 2100-UPDATE-PARA THRU 2100-EXIT         
+        PERFORM 2200-REWRITE-PARA THRU 2200-EXIT        
+        ELSE                                            
+        IF WS-EOF ='N'                                      
+        PERFORM 2000-READ-PARA THRU 2000-EXIT               
+        END-IF                                              
+        IF WS-EOF = 'Y'                                     
+        PERFORM 3000-CLOSE-PARA                             
+        END-IF                                              
+        END-IF.                                             
+ 2020-EXIT. EXIT.                                           
+ 2100-UPDATE-PARA.                                          
+     MOVE DUE-DATE OF WS-BILL-PAY TO DUE-DATE-NUM.          
+     COMPUTE DATE-IN-DAYS = FUNCTION                        
+                           INTEGER-OF-DATE(DUE-DATE-NUM).   
+     COMPUTE DATE-IN-DAYS-20 = DATE-IN-DAYS + 20.           
+     COMPUTE DUE-DATE-NUM-20 = FUNCTION                     
+                           DATE-OF-INTEGER(DATE-IN-DAYS-20).
+     MOVE DUE-DATE-NUM-20 TO DUE-DATE OF WS-BILL-LAY OUT.    
+                                                            
+     COMPUTE TOTAL-DUE-TO-PAY OF WS-BILL-LAYOUT             
+      = TOTAL-DUE-TO-PAY OF WS-BILL-PAY + 20.               
+ 2100-EXIT. EXIT.                                                 
+ 2200-REWRITE-PARA.                                               
+     REWRITE WS-BILL-LAYOUT.                                      
+     IF WS-FS2 = '00'                                             
+       ADD +1 TO WS-OUT-REC                                       
+       DISPLAY WS-BILL-LAYOUT                                     
+     END-IF.                                                      
+     IF WS-EOF = 'N'                                              
+     PERFORM 2000-READ-PARA THRU 2000-EXIT                        
+     END-IF.                                                      
+ 2200-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+
+run jcl::
+
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=PSRKSDSU                                                  
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.BILL,DISP=SHR                      
+//INDD2 DD DSN=ADCDI.SAKSHI.BILL.KSDS.CLUSTER,DISP=OLD                  
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSIN DD *                                                            
+/*                                                                      
+**************************** Bottom of Data ****************************
+
+
+KSDS CREATION:
+
+//ADCDIR JOB 123,'KSDS CREATION',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),     
+//        NOTIFY=&SYSUID                                                
+//STEP01 EXEC PGM=IDCAMS                                                
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSOUT DD SYSOUT=*                                                    
+//SYSIN DD *                                                            
+  DELETE ADCDI.SAKSHI.BILL.KSDS.CLUSTER                                 
+  SET MAXCC = 00                                                        
+  DEFINE CLUSTER(NAME(ADCDI.SAKSHI.BILL.KSDS.CLUSTER) -                 
+  CISZ(596) -                                                           
+  VOLUME(USR001) -                                                      
+  INDEXED -                                                             
+  RECSZ(45,45) -                                                        
+  KEY(5,0) -                                                            
+  TRACKS(1,1) -                                                         
+  FREESPACE(1,1)) -                                                       
+  DATA(NAME(ADCDI.SAKSHI.BILL.KSDS.DATA)) -                             
+  INDEX(NAME(ADCDI.SAKSHI.BILL.KSDS.INDEX))                             
+/*                                                                      
+**************************** Bottom of Data ****************************	  

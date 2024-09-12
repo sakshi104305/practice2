@@ -1,0 +1,238 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM07.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+******************************************************************
+*READ DATA FROM MASTER AND TRANSACTION FILE AND CREATE A NEW FILE 
+*FOR BILLING.                                                     
+******************************************************************
+                                                                  
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT MASTFIL ASSIGN TO INDD1                               
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS IS SEQUENTIAL                                         
+     FILE STATUS IS WS-FS1.                                       
+     SELECT TRANFIL ASSIGN TO INDD2           
+     ORGANIZATION IS SEQUENTIAL               
+     ACCESS IS SEQUENTIAL                     
+     FILE STATUS IS WS-FS2.                   
+                                              
+     SELECT BILLFIL ASSIGN TO OUTDD           
+     ORGANIZATION IS SEQUENTIAL               
+     ACCESS IS SEQUENTIAL                     
+     FILE STATUS IS WS-FS3.                   
+                                              
+ DATA DIVISION.                               
+ FILE SECTION.                                
+ FD MASTFIL                                   
+     LABEL RECORDS ARE STANDARD.              
+ COPY MASTCPY.                                
+                                              
+ FD TRANFIL                                   
+     LABEL RECORDS ARE STANDARD.              
+ COPY TRAN2FIL.                               
+                                             
+ FD BILLFIL                                  
+     LABEL RECORDS ARE STANDARD.             
+ COPY BILLCPY.                               
+                                             
+ WORKING-STORAGE SECTION.                    
+ 01 WS-FS1                   PIC X(2).       
+ 01 WS-FS2                   PIC X(2).       
+ 01 WS-FS3                   PIC X(2).       
+ 01 WS-END-OF-MFIL           PIC X(1).       
+ 01 WS-END-OF-TFIL           PIC X(1).       
+ 01 WS-IN-REC                PIC 9(2).       
+ 01 WS-OUT-REC               PIC 9(2).       
+ 01 WS-DUE-LEFT              PIC S9(5)V9(2). 
+ 01 WS-LAST-BILL-DATE-NUM    PIC 9(8).       
+ 01 WS-DATE-IN-DAYS          PIC 9(8).       
+ 01 WS-DUE-DATE-ALP          PIC 9(8).       
+                                             
+ PROCEDURE DIVISION.                         
+     DISPLAY 'CBLPGM07 STARTED'.                     
+     PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.    
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.          
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL  
+                             WS-END-OF-TFIL = 'Y'.   
+     CLOSE MASTFIL.                                  
+     CLOSE TRANFIL.                                  
+     CLOSE BILLFIL.                                  
+     DISPLAY 'INPUT REC: '  WS-IN-REC.               
+     DISPLAY 'OUTPUT REC: '  WS-OUT-REC.             
+     STOP RUN.                                       
+ 1000-INITIALIZE-PARA.                               
+     MOVE SPACE TO WS-FS1,                           
+                   WS-FS2,                           
+                   WS-FS3.                           
+     MOVE 'N' TO WS-END-OF-TFIL.                     
+     MOVE 'N' TO WS-END-OF-MFIL.                     
+     MOVE ZERO TO WS-IN-REC.                         
+     MOVE ZERO TO WS-OUT-REC.                        
+     OPEN INPUT MASTFIL.                             
+     IF WS-FS1 = '00'                                
+       CONTINUE                                      
+      ELSE                                           
+       DISPLAY 'ERROR IN OPENING MASTFIL.'           
+     END-IF.                                         
+     OPEN INPUT TRANFIL.                             
+     IF WS-FS2 = '00'                                
+       CONTINUE                                      
+      ELSE                                           
+       DISPLAY 'ERROR IN OPENING TRANFIL.'           
+     END-IF.                                         
+     OPEN OUTPUT BILLFIL.                            
+     IF WS-FS3 = '00'                                
+       CONTINUE                                      
+      ELSE                                           
+       DISPLAY 'ERROR IN OPENING BILLFIL.'           
+     END-IF.                                         
+     INITIALIZE WS-BILL-PAY.                         
+     OPEN INPUT MASTFIL.                          
+     IF WS-FS1 = '00'                             
+       CONTINUE                                   
+      ELSE                                        
+       DISPLAY 'ERROR IN OPENING MASTFIL.'        
+     END-IF.                                      
+     OPEN INPUT TRANFIL.                          
+     IF WS-FS2 = '00'                             
+       CONTINUE                                   
+      ELSE                                        
+       DISPLAY 'ERROR IN OPENING TRANFIL.'        
+     END-IF.                                      
+     OPEN OUTPUT BILLFIL.                         
+     IF WS-FS3 = '00'                             
+       CONTINUE                                   
+      ELSE                                        
+       DISPLAY 'ERROR IN OPENING BILLFIL.'        
+     END-IF.                                      
+     INITIALIZE WS-BILL-PAY.                      
+ 1000-EXIT. EXIT.                                     
+                                                      
+ 2000-READ-PARA.                                      
+     PERFORM 2100-MFIL-READ-PARA THRU 2100-EXIT.      
+     PERFORM 2200-TFIL-READ-PARA THRU 2200-EXIT.      
+ 2000-EXIT. EXIT.                                     
+                                                      
+ 2100-MFIL-READ-PARA.                                 
+     READ MASTFIL                                     
+        AT END                                        
+       MOVE 'Y' TO WS-END-OF-MFIL.                    
+     IF WS-FS1 = '00'                                 
+        CONTINUE                                      
+     ELSE IF WS-FS1 = '10'                            
+       DISPLAY 'END OF FILE'                          
+     ELSE                                             
+       DISPLAY 'ERROR IN READING MASTFIL.'            
+     END-IF.                                          
+     DISPLAY 'IN 2100'.                               
+ 2100-EXIT. EXIT.                                              
+                                                               
+ 2200-TFIL-READ-PARA.                                          
+     READ TRANFIL                                              
+        AT END                                                 
+       MOVE 'Y' TO WS-END-OF-TFIL.                             
+     IF WS-FS2 = '00'                                          
+        CONTINUE                                               
+     ELSE IF WS-FS2 = '10'                                     
+       DISPLAY 'END OF FILE'                                   
+     ELSE                                                      
+       DISPLAY 'ERROR IN READING TRANFIL.'                     
+     END-IF.                                                   
+ 2200-EXIT. EXIT.                                              
+                                                               
+ 3000-PROCESS-PARA.                                            
+     DISPLAY 'MASTER CARD:' CARD-NUMBER OF WS-MASTER-LAYOUT.   
+     DISPLAY 'TRAN CARD:' CARD-NUMBER OF WS-TRAN.              
+     IF CARD-NUMBER OF WS-MASTER-LAYOUT =                      
+                             CARD-NUMBER OF WS-TRAN             
+           PERFORM 3100-TOTAL-DUE-PARA THRU 3100-EXIT           
+           PERFORM 3200-MIN-DUE-PARA THRU 3200-EXIT             
+           PERFORM 3300-DUE-DATE-PARA THRU 3300-EXIT            
+           PERFORM 3400-WRITE-PARA THRU 3400-EXIT               
+           PERFORM 2000-READ-PARA THRU 2000-EXIT                
+     ELSE IF                                                    
+      CARD-NUMBER OF WS-MASTER-LAYOUT < CARD-NUMBER OF WS-TRAN  
+       COMPUTE WS-DUE-LEFT =                                    
+        (PREVIOUS-DUE OF WS-MASTER-LAYOUT - PREVIOUS-DUE-PAID   
+                             OF WS-MASTER-LAYOUT)               
+        IF WS-DUE-LEFT > 0                                      
+           PERFORM 3100-TOTAL-DUE-PARA THRU 3100-EXIT           
+           PERFORM 3200-MIN-DUE-PARA THRU 3200-EXIT             
+           PERFORM 3300-DUE-DATE-PARA THRU 3300-EXIT            
+           PERFORM 3400-WRITE-PARA THRU 3400-EXIT               
+           PERFORM 2100-MFIL-READ-PARA THRU 2100-EXIT           
+     ELSE                                                       
+           PERFORM 2100-MFIL-READ-PARA THRU 2100-EXIT           
+     END-IF                                                       
+     END-IF.                                                      
+ 3000-EXIT. EXIT.                                                 
+                                                                  
+ 3100-TOTAL-DUE-PARA.                                             
+      DISPLAY 'PREV-DUE' PREVIOUS-DUE OF WS-MASTER-LAYOUT.        
+      DISPLAY 'PREV-DUE-PAID'  PREVIOUS-DUE-PAID                  
+                                    OF WS-MASTER-LAYOUT.          
+     COMPUTE TOTAL-DUE-TO-PAY =                                   
+      ((PREVIOUS-DUE OF WS-MASTER-LAYOUT - PREVIOUS-DUE-PAID OF   
+         WS-MASTER-LAYOUT) * .15) + TOTAL-DUE-AMOUNT OF WS-TRAN.  
+     DISPLAY 'TOTAL-DUE-TO-PAY' TOTAL-DUE-TO-PAY.                 
+ 3100-EXIT. EXIT.                                                 
+                                                                  
+ 3200-MIN-DUE-PARA.                                               
+     COMPUTE MIN-DUE-TO-PAY = (TOTAL-DUE-TO-PAY * .20).           
+ 3200-EXIT. EXIT.                                                 
+                                                                  
+ 3300-DUE-DATE-PARA.                                              
+     MOVE LAST-BILL-DATE OF WS-MASTER-LAYOUT                      
+                            TO WS-LAST-BILL-DATE-NUM.             
+     COMPUTE WS-LAST-BILL-DATE-NUM =                              
+                 FUNCTION INTEGER-OF-DATE(WS-LAST-BILL-DATE-NUM). 
+     COMPUTE WS-DATE-IN-DAYS = WS-LAST-BILL-DATE-NUM + 20.        
+     COMPUTE WS-DUE-DATE-ALP =                                    
+                 FUNCTION DATE-OF-INTEGER(WS-DATE-IN-DAYS).       
+     MOVE WS-DUE-DATE-ALP TO DUE-DATE OF WS-BILL-PAY.             
+ 3300-EXIT. EXIT.                                                 
+                                                                  
+ 3400-WRITE-PARA.                                                 
+     MOVE CARD-NUMBER OF WS-MASTER-LAYOUT TO                      
+                  CARD-NUMBER OF WS-BILL-PAY.                     
+     MOVE CUST-NAME OF WS-MASTER-LAYOUT TO                        
+                  CUST-NAME OF WS-BILL-PAY.                       
+     MOVE LAST-BILL-DATE OF WS-MASTER-LAYOUT TO                   
+                  BILL-DATE OF WS-BILL-PAY.                       
+     WRITE WS-BILL-PAY.                                           
+     IF WS-FS3 = '00'                                             
+         CONTINUE                                                 
+     ELSE                                                         
+         DISPLAY 'ERROR IN WRITING BILL FILE:' WS-FS3             
+     END-IF.                                                      
+     ADD +1 TO WS-OUT-REC.                                        
+ 3400-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+
+
+
+RUN JCL:
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=CBLPGM07                                                  
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.MASTER2,DISP=SHR                   
+//INDD2 DD DSN=ADCDI.SAKSHI.T11.CARD.TRANS2,DISP=SHR                    
+//OUTDD DD DSN=ADCDI.SAKSHI.T11.CARD.BILL,                              
+//         DISP=(NEW,CATLG,DELETE),                                     
+//         SPACE=(TRK,(1,1),RLSE),                                      
+//         DCB=(LRECL=45,BLKSIZE=450,RECFM=FB),                         
+//         VOL=SER=USR001                                               
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+/*                                                                      
+                                                                        
+**************************** Bottom of Data ****************************

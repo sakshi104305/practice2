@@ -1,0 +1,183 @@
+       ID DIVISION.                                                     
+       PROGRAM-ID. BOTTOM5.                                             
+       AUTHOR. SAKSHI.                                                  
+       DATE-WRITTEN. TODAY.                                             
+       DATE-COMPILED. TODAY.                                            
+      ****************************************************************  
+      * SELECTING BOTTOM 5 RECORDS.                                     
+      ******************************************************************
+       ENVIRONMENT DIVISION.                                            
+       INPUT-OUTPUT SECTION.                                            
+       FILE-CONTROL.                                                    
+           SELECT MASTFIL ASSIGN TO INDD                                
+           ORGANIZATION IS INDEXED                                      
+           ACCESS MODE IS DYNAMIC                                       
+           RECORD KEY IS CARD-NUMBER OF WS-MASTER-LAYOUT                
+           FILE STATUS IS WS-FS1.                                       
+                                                                        
+           SELECT OUTFIL ASSIGN TO OUTDD                                
+           ORGANIZATION IS SEQUENTIAL                                   
+           ACCESS MODE IS SEQUENTIAL                                    
+           FILE STATUS IS WS-FS2.                                       
+                                                                        
+       DATA DIVISION.                                                   
+       FILE SECTION.                                                    
+       FD MASTFIL                                                       
+           LABEL RECORDS ARE STANDARD.                                  
+       COPY MASTCPY.                                                    
+       FD OUTFIL                                                        
+           LABEL RECORDS ARE STANDARD.                                  
+       COPY MASTCPY                                                     
+           REPLACING  WS-MASTER-LAYOUT BY WS-MASTER-OUT.                
+       WORKING-STORAGE SECTION.                                         
+       01 WS-FS1            PIC X(2).                                   
+       01 WS-FS2            PIC X(2).                                   
+       01 WS-IN-REC         PIC 9(2).                                   
+       01 WS-OUT-REC        PIC 9(2).                                   
+       01 WS-REC-5          PIC 9(2).                                   
+       01 WS-END-OF-FIL     PIC X(1).                                   
+       01 WS-CARD-BUF       PIC X(5).                                   
+       01 WS-SPGM           PIC X(8).                                   
+                                                                        
+       PROCEDURE DIVISION.                                              
+       0000-MAIN-PARA.                                                  
+           DISPLAY 'BOTTOM5 PROGRAM STARTED.'.                          
+           CALL 'BOTTOMSB' USING WS-IN-REC, WS-REC-5, WS-CARD-BUF.      
+           DISPLAY 'WS-IN-REC:' WS-IN-REC.                              
+           DISPLAY 'WS-REC-5:' WS-REC-5.                                
+           DISPLAY 'WS-CARD-BUF:' WS-CARD-BUF.                          
+      *    PERFORM 2000-READ-PARA THRU 2000-EXIT                        
+           DISPLAY 'WS-OUT-REC:' WS-OUT-REC.                            
+           PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.                 
+           CLOSE MASTFIL.                                               
+           CLOSE OUTFIL.                                                
+           STOP RUN.                                                    
+                                                                        
+       1000-INITIALIZE-PARA.                                            
+           DISPLAY 'INITITIAL PARA.'.                                   
+           MOVE SPACE TO WS-FS1,                                        
+                         WS-FS2.                                        
+             OPEN OUTPUT OUTFIL.                                        
+                   EVALUATE WS-FS2                                      
+                   WHEN '00'                                            
+                   DISPLAY 'FILE OPENED'                                
+                   WHEN OTHER                                           
+                   DISPLAY 'STATUS:' WS-FS2                             
+                   END-EVALUATE.                                        
+           OPEN INPUT MASTFIL.                                          
+           MOVE WS-CARD-BUF TO CARD-NUMBER OF WS-MASTER-LAYOUT.         
+           START MASTFIL KEY IS EQUAL TO                                
+                             CARD-NUMBER OF WS-MASTER-LAYOUT.           
+                EVALUATE WS-FS1                                         
+                WHEN '00'                                               
+                PERFORM 2000-READ-PARA THRU 2000-EXIT UNTIL WS-FS1 = 10 
+                WHEN '23'                                               
+                DISPLAY 'RECORD NOT FOUND.'                             
+                END-EVALUATE.                                           
+       1000-EXIT. EXIT.                                                 
+       2000-READ-PARA.                                                  
+           READ MASTFIL NEXT RECORD                                     
+             AT END                                                     
+                DISPLAY 'END-OF-FILE:' WS-FS1                           
+             NOT AT END                                                 
+             PERFORM 3100-MOVE-PARA THRU 3100-EXIT                      
+             ADD +1 TO WS-OUT-REC.                                      
+       2000-EXIT. EXIT.                                                 
+       3100-MOVE-PARA.                                                  
+             MOVE CARD-NUMBER OF WS-MASTER-LAYOUT                       
+                  TO CARD-NUMBER OF WS-MASTER-OUT.                      
+             MOVE CUST-NAME OF WS-MASTER-LAYOUT                         
+                  TO CUST-NAME OF WS-MASTER-OUT.                        
+             WRITE WS-MASTER-OUT.                                       
+             IF WS-FS2 = 00                                             
+                CONTINUE                                                
+             ELSE                                                       
+                DISPLAY 'WRITE STATUS:' WS-FS2                          
+             END-IF.                                                    
+       3100-EXIT. EXIT.                                                 
+
+
+
+
+
+
+SUBPROGRAM:
+
+
+***************************** Top of Data ******************************
+       ID DIVISION.                                                     
+       PROGRAM-ID. BOTTOMSB.                                            
+       AUTHOR. SAKSHI.                                                  
+       DATE-WRITTEN. TODAY.                                             
+       DATE-COMPILED. TODAY.                                            
+      ****************************************************************  
+      * GETTING HOW MANY RECORDS IN FILE.                               
+      ******************************************************************
+       ENVIRONMENT DIVISION.                                            
+       INPUT-OUTPUT SECTION.                                            
+       FILE-CONTROL.                                                    
+           SELECT MASTFIL ASSIGN TO INDD                                
+           ORGANIZATION IS INDEXED                                      
+           ACCESS MODE IS SEQUENTIAL                                    
+           RECORD KEY IS CARD-NUMBER OF WS-MASTER-LAYOUT                
+           FILE STATUS IS WS-FS1.                                       
+                                                                        
+       DATA DIVISION.                                                   
+       FILE SECTION.                                                    
+       FD MASTFIL                                                       
+           LABEL RECORDS ARE STANDARD.                                  
+       COPY MASTCPY.                                                    
+       WORKING-STORAGE SECTION.                                         
+       01 WS-END-OF-FIL               PIC X(1).                         
+       01 WS-FS1                      PIC X(2).                         
+       LINKAGE SECTION.                                                 
+       01 WS-REC-COUNT                PIC 9(2).                         
+       01 WS-REC-5                    PIC 9(2).                         
+       01 WS-CARD-BUF                 PIC X(5).                         
+                                                                        
+       PROCEDURE DIVISION USING WS-REC-COUNT, WS-REC-5, WS-CARD-BUF.    
+       0000-MAIN-PARA.                                                  
+           MOVE 'N' TO WS-END-OF-FIL.                                   
+           OPEN INPUT MASTFIL.                                          
+           PERFORM 1000-SEQ-PARA THRU 1000-EXIT UNTIL                   
+                                       WS-END-OF-FIL = 'Y'.             
+           COMPUTE WS-REC-5 = WS-REC-COUNT - 5 + 1.                     
+           CLOSE MASTFIL.                                               
+           OPEN INPUT MASTFIL.                                          
+           PERFORM 1500-READ-PARA THRU 1500-EXIT WS-REC-5 TIMES.        
+           CLOSE MASTFIL.                                               
+           GOBACK.                                                      
+       1000-SEQ-PARA.                                                   
+           READ MASTFIL                                                 
+               AT END                                                   
+                  MOVE 'Y' TO WS-END-OF-FIL.                            
+               EVALUATE WS-FS1                                          
+                  WHEN '00'                                             
+                  ADD +1 TO WS-REC-COUNT                                
+                  WHEN OTHER                                            
+                  DISPLAY 'OTHER STATUS:' WS-FS1                        
+               END-EVALUATE.                                            
+       1000-EXIT.                                                       
+       1500-READ-PARA.                                                  
+           READ MASTFIL.                                                
+                 MOVE CARD-NUMBER OF WS-MASTER-LAYOUT TO WS-CARD-BUF.   
+       1500-EXIT. EXIT.                                                 
+**************************** Bottom of Data ****************************
+
+
+
+RUNJCL
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=BOTTOM5                                                   
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//INDD  DD DSN=ADCDI.SAKSHI.KSDS.CLUSTER,DISP=SHR                       
+//OUTDD  DD DSN=ADCDI.SAKSHI.BOTTOM5.REC,                               
+//           DISP=(NEW,CATLG,DELETE),                                   
+//           SPACE=(TRK,(1,1)),DCB=(RECFM=FB,LRECL=55,BLKSIZE=550),     
+//           VOL=SER=USR001                                             
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSIN DD *                                                            
+/*                                                                      
+**************************** Bottom of Data ****************************

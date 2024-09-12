@@ -1,0 +1,162 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM2.                                             
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+***************************************************************   
+* READING FILE1 AND WRITING VALID REC TO MASTER FILE.             
+***************************************************************   
+                                                                  
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT FILE1 ASSIGN TO INDD1                                 
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS IS SEQUENTIAL                                         
+     FILE STATUS IS WS-FS1.                                       
+     SELECT MASTFIL ASSIGN TO OUTDD1         
+     ORGANIZATION IS SEQUENTIAL              
+     ACCESS IS SEQUENTIAL                    
+     FILE STATUS IS WS-FS2.                  
+                                             
+ DATA DIVISION.                              
+ FILE SECTION.                               
+ FD FILE1                                    
+     LABEL RECORDS ARE STANDARD.             
+ COPY MASTCPY.                               
+ FD MASTFIL                                  
+     LABEL RECORDS ARE STANDARD.             
+ COPY MASTCPY                                
+     REPLACING WS-MASTER-LAYOUT BY WS-MASTER.
+                                             
+ WORKING-STORAGE SECTION.                    
+ 01 WS-FS1           PIC 9(2).               
+ 01 WS-FS2           PIC 9(2).               
+ 01 WS-END-OF-FIL    PIC X(1).               
+ 01 WS-VALID         PIC X(1).                       
+ 01 WS-ABENDPGM      PIC X(8)  VALUE 'ABENDPGM'.     
+ 01 WS-IN-REC        PIC 9(2).                       
+ 01 WS-OUT-REC       PIC 9(2).                       
+ PROCEDURE DIVISION.                                 
+ 0000-MAIN-PARA.                                     
+     DISPLAY 'CBLPGM02 STARTED'.                     
+     PERFORM 1000-INITIALIZATION-PARA THRU 1000-EXIT.
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.          
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL  
+                       WS-END-OF-FIL = 'Y'.          
+     CLOSE FILE1.                                    
+     CLOSE MASTFIL.                                  
+     DISPLAY 'TOTAL INPUT REC:' WS-IN-REC.           
+     DISPLAY 'TOTAL OUTPUT REC:' WS-OUT-REC.         
+     STOP RUN.                                       
+ 1000-INITIALIZATION-PARA.                           
+*    MOVE 'N' TO WS-END-OF-FIL.                      
+     MOVE ZERO TO WS-FS1,                            
+                   WS-FS2.                                  
+     MOVE SPACE TO WS-VALID.                                
+     MOVE ZERO TO WS-IN-REC,                                
+                  WS-OUT-REC.                               
+     OPEN INPUT FILE1.                                      
+         IF WS-FS1 = 00                                     
+            CONTINUE                                        
+         ELSE                                               
+            DISPLAY 'ERROR IN OPENING INPUT FILE:' WS-FS1.  
+     OPEN OUTPUT MASTFIL.                                   
+         IF WS-FS2 = 00                                     
+            CONTINUE                                        
+         ELSE                                               
+            DISPLAY 'ERROR IN OPENING OUTPUT FILE:' WS-FS2. 
+ 1000-EXIT. EXIT.                                           
+                                                            
+ 2000-READ-PARA.                                            
+     MOVE 'N' TO WS-END-OF-FIL.                             
+     READ FILE1                                             
+       AT END                                                
+       MOVE 'Y' TO WS-END-OF-FIL.                            
+       EVALUATE WS-FS1                                       
+        WHEN 00                                              
+        ADD +1 TO WS-IN-REC                                  
+        DISPLAY 'INPUT REC NO:' WS-IN-REC                    
+        WHEN 10                                              
+        DISPLAY 'END OF FIL'                                 
+        WHEN OTHER                                           
+        DISPLAY 'ERROR IN READING INPUT FILE:' WS-FS1        
+       END-EVALUATE.                                         
+ 2000-EXIT. EXIT.                                            
+                                                             
+ 3000-PROCESS-PARA.                                          
+     MOVE 'Y' TO WS-VALID.                                   
+     PERFORM 3100-AUDIT-PARA THRU 3100-EXIT.                 
+     EVALUATE WS-VALID                                       
+        WHEN 'Y'                                             
+        PERFORM 3200-MOVE-WRITE-PARA THRU 3200-EXIT          
+        WHEN OTHER                                          
+        DISPLAY 'ERROR RECORDS ARE:' WS-MASTER-LAYOUT       
+     END-EVALUATE.                                          
+     IF WS-END-OF-FIL = 'N'                                 
+     PERFORM 2000-READ-PARA THRU 2000-EXIT                  
+     END-IF.                                                
+ 3000-EXIT. EXIT.                                           
+                                                            
+ 3100-AUDIT-PARA.                                           
+     EVALUATE CARD-TYPE OF WS-MASTER-LAYOUT                 
+     WHEN 'X'                                               
+     MOVE 'N' TO WS-VALID                                   
+     WHEN OTHER                                             
+     MOVE 'Y' TO WS-VALID                                   
+     END-EVALUATE.                                          
+ 3100-EXIT. EXIT.                                           
+                                                            
+ 3200-MOVE-WRITE-PARA.                                      
+     MOVE CARD-NUMBER OF WS-MASTER-LAYOUT TO                
+              CARD-NUMBER OF WS-MASTER.                     
+     MOVE CUST-NAME OF WS-MASTER-LAYOUT TO                  
+              CUST-NAME OF WS-MASTER.                       
+     MOVE CARD-LIMIT OF WS-MASTER-LAYOUT TO                 
+              CARD-LIMIT OF WS-MASTER.                      
+     MOVE PREVIOUS-DUE OF WS-MASTER-LAYOUT TO               
+              PREVIOUS-DUE OF WS-MASTER.                    
+     MOVE PREVIOUS-DUE-PAID OF WS-MASTER-LAYOUT TO          
+              PREVIOUS-DUE-PAID OF WS-MASTER.               
+     MOVE CARD-TYPE OF WS-MASTER-LAYOUT TO                  
+              CARD-TYPE OF WS-MASTER.                       
+     MOVE REWARD-POINT-CODE OF WS-MASTER-LAYOUT TO          
+              REWARD-POINT-CODE OF WS-MASTER.               
+     MOVE CARD-EXPIRE-DATE OF WS-MASTER-LAYOUT TO           
+              CARD-EXPIRE-DATE OF WS-MASTER.                
+     MOVE CUST-ACTIVE-IND OF WS-MASTER-LAYOUT TO            
+              CUST-ACTIVE-IND OF WS-MASTER.                 
+     MOVE LAST-BILL-DATE OF WS-MASTER-LAYOUT TO             
+              LAST-BILL-DATE OF WS-MASTER.                  
+     WRITE WS-MASTER.                                             
+     EVALUATE WS-FS2                                              
+          WHEN '00'                                               
+          ADD +1 TO WS-OUT-REC                                    
+          WHEN OTHER                                              
+          DISPLAY 'ERROR IS WRITE: ' WS-FS2                       
+     END-EVALUATE.                                                
+ 3200-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+
+
+
+run jcl:
+
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=CBLPGM2                                                   
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.FILE1,DISP=SHR                     
+//OUTDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.MASTER1,                          
+//         DISP=(NEW,CATLG,DELETE),                                     
+//         SPACE=(TRK,(1,1),RLSE),                                      
+//         DCB=(LRECL=55,BLKSIZE=550,RECFM=FB),                         
+//         VOL=SER=USR001                                               
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+/*                                                                      
+**************************** Bottom of Data ****************************

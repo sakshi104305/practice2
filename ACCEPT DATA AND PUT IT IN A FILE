@@ -1,0 +1,193 @@
+****** ***************************** Top of Data ******************************
+000001        ID DIVISION.                                                     
+000002        PROGRAM-ID. ACCTPGM1.                                            
+000003        AUTHOR. SAKSHI.                                                  
+000004        DATE-WRITTEN. 01/06/2024.                                        
+000005        DATE-COMPILED. 01/06/2024.                                       
+000006                                                                         
+000007       ***************************************************************   
+000008       *ACCEPT DATA FROM JCL AND MOVE IT TO FILE.                        
+000009       ***************************************************************   
+000010                                                                         
+000011        ENVIRONMENT DIVISION.                                            
+000012        INPUT-OUTPUT SECTION.                                            
+000013        FILE-CONTROL.                                                    
+000014            SELECT ACCTFIL ASSIGN TO OUTDD1                              
+000015            ORGANIZATION IS SEQUENTIAL                                   
+000016            ACCESS MODE IS SEQUENTIAL                                    
+000017            FILE STATUS IS WS-FS-1.                                      
+000018                                                                         
+000019        DATA DIVISION.                                         
+000020        FILE SECTION.                                          
+000021        FD ACCTFIL                                             
+000022            LABEL RECORD ARE STANDARD.                         
+000023        01 ACCT-DET-FIL.                                       
+000024            05 ACCT-NUM          PIC X(5).                     
+000025            05 FILLER            PIC X(08).                    
+000026            05 CUST-NAME         PIC X(10).                    
+000027            05 FILLER            PIC X(08).                    
+000028            05 ACCT-BAL          PIC S9(3)V9(2).               
+000029            05 FILLER            PIC X(08).                    
+000030            05 ACCT-TYPE         PIC X(10).                    
+000031                                                               
+000032        WORKING-STORAGE SECTION.                               
+000033        01 ACCT-DET.                                           
+000034            05 ACCT-NUM          PIC X(5).                     
+000035            05 CUST-NAME         PIC X(10).                    
+000036            05 ACCT-BAL          PIC S9(3)V9(2).               
+000037            05 ACCT-TYPE         PIC X(10).                    
+000038        01 WS-FS-1               PIC X(2).                   
+000039        01 WS-END-OF-REC         PIC X(1).                   
+000040        01 WS-VALID-IN           PIC X(1).                   
+000041        01 WS-IN-REC             PIC 9(2).                   
+000042        01 WS-OUT-REC            PIC 9(2).                   
+000043        01 WS-ABENDPGM           PIC X(8).                   
+000044        01 WS-ACCT-BUF           PIC X(5).                   
+000045                                                             
+000046        PROCEDURE DIVISION.                                  
+000047        0000-MAIN-PARA.                                      
+000048            DISPLAY 'ACCTPGM1 STARTED'.                      
+000049            PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.     
+000050            PERFORM 2000-GET-PARA THRU 2000-EXIT.            
+000051            PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL   
+000052                                   WS-END-OF-REC = 'Y'.      
+000053            CLOSE ACCTFIL.                                   
+000054            DISPLAY "TOTAL INPUT REC:" WS-IN-REC.            
+000055            DISPLAY "TOTAL OUTPUT REC:" WS-OUT-REC.          
+000056            STOP RUN.                                        
+000057                                                                   
+000058        1000-INITIALIZE-PARA.                                      
+000059            OPEN OUTPUT ACCTFIL.                                   
+000060            INITIALIZE ACCT-DET, WS-FS-1, WS-IN-REC, WS-OUT-REC.   
+000061            MOVE 'N' TO WS-END-OF-REC.                             
+000062            INITIALIZE ACCT-DET-FIL.                               
+000063            MOVE SPACE TO WS-ACCT-BUF.                             
+000064        1000-EXIT.EXIT.                                            
+000065                                                                   
+000066        2000-GET-PARA.                                             
+000067            ACCEPT ACCT-NUM OF ACCT-DET.                           
+000068            ACCEPT CUST-NAME OF ACCT-DET.                          
+000069            ACCEPT ACCT-BAL OF ACCT-DET.                           
+000070            ACCEPT ACCT-TYPE OF ACCT-DET.                          
+000071            ADD +1 TO WS-IN-REC.                                   
+000072        2000-EXIT.EXIT.                                            
+000073                                                                   
+000074        3000-PROCESS-PARA.                                         
+000075            MOVE 'Y' TO WS-VALID-IN.                               
+000076            PERFORM 3100-AUDIT-PARA THRU 3100-EXIT.          
+000077            IF WS-VALID-IN = 'Y'                             
+000078            IF ACCT-NUM OF ACCT-DET = WS-ACCT-BUF            
+000079               NEXT SENTENCE                                 
+000080            ELSE                                             
+000081               PERFORM 3200-MOVE-WRITE-PARA THRU 3200-EXIT   
+000082            END-IF                                           
+000083            END-IF.                                          
+000084            ACCEPT WS-END-OF-REC.                            
+000085            IF WS-END-OF-REC = 'N'                           
+000086            PERFORM 2000-GET-PARA THRU 2000-EXIT             
+000087            END-IF.                                          
+000088        3000-EXIT.EXIT.                                      
+000089                                                             
+000090        3100-AUDIT-PARA.                                     
+000091            IF ACCT-NUM OF ACCT-DET = SPACE                  
+000092            MOVE 'N' TO WS-VALID-IN                          
+000093            GO TO 3100-EXIT                                  
+000094            END-IF.                                          
+000095            IF CUST-NAME OF ACCT-DET = SPACE            
+000096            MOVE 'N' TO WS-VALID-IN                     
+000097            GO TO 3100-EXIT                             
+000098            END-IF.                                     
+000099            IF ACCT-BAL OF ACCT-DET < ZERO              
+000100            MOVE 'N' TO WS-VALID-IN                     
+000101            GO TO 3100-EXIT                             
+000102            END-IF.                                     
+000103            IF ACCT-TYPE OF ACCT-DET = SPACE            
+000104            MOVE 'N' TO WS-VALID-IN                     
+000105            GO TO 3100-EXIT                             
+000106            END-IF.                                     
+000107        3100-EXIT.EXIT.                                 
+000108                                                        
+000109        3200-MOVE-WRITE-PARA.                           
+000110            MOVE ACCT-NUM OF ACCT-DET TO                
+000111                          ACCT-NUM OF ACCT-DET-FIL.     
+000112            MOVE ACCT-NUM OF ACCT-DET TO WS-ACCT-BUF.   
+000113            MOVE CUST-NAME OF ACCT-DET TO               
+000114                          CUST-NAME OF ACCT-DET-FIL. 
+000115            MOVE ACCT-BAL OF ACCT-DET TO             
+000116                          ACCT-BAL OF ACCT-DET-FIL.  
+000117            MOVE ACCT-TYPE OF ACCT-DET TO            
+000118                          ACCT-TYPE OF ACCT-DET-FIL. 
+000119            WRITE ACCT-DET-FIL.                      
+000120            ADD +1 TO WS-OUT-REC.                    
+000121        3200-EXIT.EXIT.                              
+
+
+
+
+RUNJCL:
+
+//ADCDIC JOB CLASS=A,NOTIFY=ADCDI               
+//S1 EXEC PGM=ACCTPGM1                          
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=OLD     
+//OUTDD1 DD DSN=ACCDI.ACCTPGM1.FIL,             
+//          DISP=(OLD,CATLG,DELETE),            
+//          DCB=(RECFM=FB,LRECL=54,BLKSIZE=540),
+//          SPACE=(TRK,(1,1))                   
+//SYSPRINT DD SYSOUT=*                          
+//SYSOUT DD SYSOUT=*                            
+//SYSIN DD *                                    
+C1111                                           
+SAKSHI                                          
+23456                                           
+MEDICAL                                         
+N                                               
+C1111                                           
+SAKSHI        
+24356         
+MEDICAL       
+N             
+C2222         
+SANYAM        
+45000         
+HEALTH        
+N             
+              
+SAKSHI        
+24356         
+MEDICAL       
+N             
+C3333         
+SANYAM        
+50000         
+EDUCATION     
+N             
+C4444     
+PRACHI    
+67000     
+LOAN      
+N         
+          
+SANYAM    
+          
+EDUCATION 
+N         
+C5555     
+SAKSHAM   
+56000     
+SALARY    
+Y         
+
+
+
+OUTPUT:
+
+
+EDIT       ACCDI.ACCTPGM1.FIL                              Columns 00001 00054 
+Command ===>                                                  Scroll ===> CSR  
+****** ***************************** Top of Data ******************************
+000001 C1111        SAKSHI            2345F        MEDICAL                     
+000002 C2222        SANYAM            4500{        HEALTH                      
+000003 C3333        SANYAM            5000{        EDUCATION                   
+000004 C4444        PRACHI            6700{        LOAN                        
+000005 C5555        SAKSHAM           5600{        SALARY                      
+****** **************************** Bottom of Data ****************************

@@ -1,0 +1,48 @@
+***************************** Top of Data ******************************
+//ADCDIC JOB REGION=5M,NOTIFY=ADCDI                                     
+//**********************************************************************
+//*                           INPUT AREA                               *
+//**********************************************************************
+//  SET MEMBER='LENGTHRE'                                               
+//  SET SOURCE='ADCDI.SAKSHI.COBOL'                                     
+//  SET LOADLIB='ADCDI.SAKSHI.LOAD'                                     
+//**********************************************************************
+//*                   COMPILE THE COBOL PROGRAM                        *
+//************************************************ *********************
+//COBCOMP  EXEC PGM=IGYCRCTL,REGION=0M,PARM=('LIB',LIST)                
+//STEPLIB  DD  DSN=IGY410.SIGYCOMP,DISP=SHR                             
+//SYSLIB   DD  DSN=ADCDI.SAKSHI.COPYBOOK,DISP=SHR                       
+//SYSIN    DD  DSN=&SOURCE(&MEMBER),DISP=SHR                            
+//SYSPRINT DD  SYSOUT=*                                                 
+//SYSLIN   DD  DSNAME=&&LOADSET,UNIT=SYSDA,                             
+//             DISP=(MOD,PASS),SPACE=(TRK,(3,3)),                       
+//             DCB=(BLKSIZE=3200)                                       
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT2   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT3   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT4   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT5   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT6   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//SYSUT7   DD  UNIT=SYSDA,SPACE=(CYL,(1,1))                             
+//**********************************************************************
+//*                   LINK EDIT THE COBOL PROGRAM                      *
+//**********************************************************************
+//LINKEDIT EXEC PGM=IEWL,COND=(4,LT,COBCOMP),                           
+//          PARM='MAP,LIST,XREF,LET,AMODE=31,RMODE=ANY,RENT,REUS,CALL'  
+//SYSLIB   DD DISP=SHR,DSN=CEE.SCEELKED                                 
+//         DD DISP=SHR,DSN=CEE.SCEERUN                                  
+//         DD DISP=SHR,DSN=ISP.SISPLOAD                                 
+//         DD DISP=SHR,DSN=&LOADLIB                                     
+//SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)                           
+//         DD DDNAME=SYSIN                                              
+//SYSLMOD  DD DISP=SHR,DSN=&LOADLIB(&MEMBER)                            
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSUDUMP DD SYSOUT=*                                                  
+//SYSUT1   DD SPACE=(1043,(50,50)),UNIT=SYSDA                           
+**************************** Bottom of Data ****************************
+
+
+
+
+PARM = LIB -------> FOR copybook. include loadlib in syslib
+LIST ---> TO check listing for abends 

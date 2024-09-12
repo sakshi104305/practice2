@@ -1,0 +1,164 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM04.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+******************************************************************
+*READ INPUT FILE AND MOVE VALID DATA TO OUTPUT FILE.              
+******************************************************************
+                                                                  
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT CREDFIL ASSIGN TO INDD                                
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS MODE IS SEQUENTIAL                                    
+     FILE STATUS IS WS-FS1.                                       
+                                                                  
+     SELECT TRANFIL ASSIGN TO OUTDD                   
+     ORGANIZATION IS SEQUENTIAL                       
+     ACCESS MODE IS SEQUENTIAL                        
+     FILE STATUS IS WS-FS2.                           
+                                                      
+ DATA DIVISION.                                       
+ FILE SECTION.                                        
+ FD CREDFIL                                           
+     LABEL RECORDS ARE STANDARD.                      
+ COPY TRANFIL.                                        
+ FD TRANFIL                                           
+     LABEL RECORDS ARE STANDARD.                      
+ COPY TRANFIL                                         
+     REPLACING WS-TRAN-LAYOUT BY WS-TRAN.             
+ WORKING-STORAGE SECTION.                             
+ 01 WS-FS1                 PIC X(2).                  
+ 01 WS-FS2                 PIC X(2).                  
+ 01 WS-END-OF-FIL          PIC X(1).                  
+ 01 WS-ABENDPGM            PIC X(8) VALUE 'ABENDPGM'. 
+ 01 WS-IN-REC              PIC 9(2).                     
+ 01 WS-OUT-REC             PIC 9(2).                     
+ 01 WS-VALID-REC           PIC X(1).                     
+                                                         
+ PROCEDURE DIVISION.                                     
+ 0000-MAIN-PARA.                                         
+     DISPLAY 'CBLPGM05 STARTED'.                         
+     PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.        
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.              
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL      
+                               WS-END-OF-FIL = 'Y'.      
+     CLOSE CREDFIL.                                      
+     CLOSE TRANFIL.                                      
+     DISPLAY 'TOTAL INPUT REC:' WS-IN-REC.               
+     DISPLAY 'TOTAL OUTPTU REC: ' WS-OUT-REC.            
+     STOP RUN.                                           
+                                                         
+ 1000-INITIALIZE-PARA.                                   
+     MOVE ZERO TO WS-IN-REC,                             
+                  WS-OUT-REC.                             
+     MOVE SPACES TO WS-FS1,                               
+                    WS-FS2.                               
+     OPEN INPUT CREDFIL.                                  
+     IF WS-FS1 = '00'                                     
+        CONTINUE                                          
+     ELSE                                                 
+        DISPLAY 'ERROR IN OPENING INPUT FILE:'  WS-FS1    
+     END-IF.                                              
+     OPEN OUTPUT TRANFIL.                                 
+     IF WS-FS2 = '00'                                     
+        CONTINUE                                          
+     ELSE                                                 
+        DISPLAY 'ERROR IN OPENING OUTPUT FILE:'  WS-FS2   
+     END-IF.                                              
+     INITIALIZE WS-TRAN-LAYOUT, WS-TRAN.                  
+ 1000-EXIT. EXIT.                                         
+                                                          
+ 2000-READ-PARA.                                          
+     MOVE 'N' TO WS-END-OF-FIL.                           
+     READ CREDFIL                                         
+        AT END                                            
+        MOVE 'Y' TO WS-END-OF-FIL.                        
+     IF WS-FS1 = '00'                                     
+        ADD +1 TO WS-IN-REC                               
+     ELSE IF WS-FS1 = '10'                                
+        DISPLAY 'END OF RECORDS.'                         
+     ELSE                                                 
+        DISPLAY 'ERROR IN READING CREDFIL.'               
+     END-IF.                                              
+ 2000-EXIT. EXIT.                                         
+                                                          
+ 3000-PROCESS-PARA.                                       
+     MOVE 'Y' TO WS-VALID-REC.                            
+     PERFORM 3100-AUDIT-PARA THRU 3100-EXIT.              
+     IF WS-VALID-REC = 'Y'                                
+     PERFORM 3200-MOVE-WRITE-PARA THRU 3200-EXIT          
+     ELSE                                                 
+     CONTINUE                                              
+     END-IF.                                               
+     IF WS-END-OF-FIL = 'N'                                
+     PERFORM 2000-READ-PARA THRU 2000-EXIT                 
+     END-IF.                                               
+ 3000-EXIT. EXIT.                                          
+                                                           
+ 3100-AUDIT-PARA.                                          
+     IF TRANS-STATUS OF WS-TRAN-LAYOUT = 'APPROVED'        
+         MOVE 'Y' TO WS-VALID-REC                          
+     ELSE IF                                               
+        TRANS-STATUS OF WS-TRAN-LAYOUT = 'REJECTED'        
+        MOVE 'N' TO WS-VALID-REC                           
+     END-IF.                                               
+ 3100-EXIT. EXIT.                                          
+                                                           
+ 3200-MOVE-WRITE-PARA.                                     
+     MOVE CARD-NUMBER OF WS-TRAN-LAYOUT TO                 
+         CARD-NUMBER OF WS-TRAN.                           
+     MOVE TRANS-POS-DETAILS OF WS-TRAN-LAYOUT TO                  
+         TRANS-POS-DETAILS OF WS-TRAN.                            
+     MOVE TRANS-TYPE OF WS-TRAN-LAYOUT TO                         
+         TRANS-TYPE OF WS-TRAN.                                   
+     MOVE TRANS-STATUS OF WS-TRAN-LAYOUT TO                       
+         TRANS-STATUS OF WS-TRAN.                                 
+     MOVE TRANS-AMOUNT OF WS-TRAN-LAYOUT TO                       
+         TRANS-AMOUNT OF WS-TRAN.                                 
+     MOVE TRANS-DATE OF WS-TRAN-LAYOUT TO                         
+         TRANS-DATE OF WS-TRAN.                                   
+     WRITE WS-TRAN.                                               
+     IF WS-FS2 = 00                                               
+      ADD +1 TO WS-OUT-REC                                        
+     ELSE                                                         
+      DISPLAY 'ERROR IN WRITING OUTPUT FILE:' WS-FS2              
+     END-IF.                                                      
+ 3200-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+copybook:
+
+tranfil:
+
+01 WS-TRAN-LAYOUT.                            
+    05 CARD-NUMBER           PIC X(5).        
+    05 TRANS-POS-DETAILS     PIC X(15).       
+    05 TRANS-TYPE            PIC X(10).       
+    05 TRANS-STATUS          PIC X(10).       
+    05 TRANS-AMOUNT          PIC S9(5)V9(2).  
+    05 TRANS-DATE            PIC X(8).        
+
+
+run jcl:
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=CBLPGM05                                                  
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//INDD DD DSN=ADCDI.SAKSHI.T11.CARD.FILE2,DISP=SHR                      
+//OUTDD DD DSN=ADCDI.SAKSHI.T11.CARD.TRANS1,                            
+//         DISP=(NEW,CATLG,DELETE),                                     
+//         SPACE=(TRK,(1,1),RLSE),                                      
+//         DCB=(LRECL=55,BLKSIZE=550,RECFM=FB),                         
+//         VOL=SER=USR001                                               
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+/*                                                                      
+                                                                        
+**************************** Bottom of Data ****************************
+

@@ -1,0 +1,93 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. ARRYPGM2.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+ DATA DIVISION.                                                   
+ WORKING-STORAGE SECTION.                                         
+ 01 WS-SHOPPING.                                                  
+     05 WS-STRORE            OCCURS 3 TIMES.                      
+        10 WS-STORE-ID       PIC X(4).                            
+        10 WS-PRODUCTS       OCCURS 2 TIMES.                      
+          15 WS-PRODUCTS-NAME PIC X(5).                           
+          15 WS-PRICE        PIC S9(3)V9(2).                      
+ 01 WS-I                     PIC 9(1) VALUE ZERO.                 
+ 01 WS-J                     PIC 9(1) VALUE ZERO.                 
+ PROCEDURE DIVISION.                                              
+ 0000-MAIN-PARA.                                                  
+      DISPLAY 'AARYPGM2 STARTED'.                                
+     PERFORM 1000-ACCEPT-PARA THRU 1000-EXIT                    
+                    VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 3.    
+     PERFORM 2000-DISPLAY-PARA THRU 2000-EXIT                   
+                    VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 3.    
+     STOP RUN.                                                  
+ 1000-ACCEPT-PARA.                                              
+     ACCEPT WS-STORE-ID(WS-I)                                   
+     PERFORM 1500-ACCEPT-PARA THRU 1500-EXIT                    
+                    VARYING WS-J FROM 1 BY 1 UNTIL WS-J > 2.    
+ 1000-EXIT. EXIT.                                               
+ 1500-ACCEPT-PARA.                                              
+     ACCEPT WS-PRODUCTS-NAME(WS-I, WS-J).                       
+     ACCEPT WS-PRICE(WS-I, WS-J).                               
+ 1500-EXIT. EXIT.                                               
+ 2000-DISPLAY-PARA.                                             
+     DISPLAY 'STORE ID:' WS-STORE-ID(WS-I).                     
+     PERFORM 2500-DISPLAY-PARA THRU 2500-EXIT                   
+                    VARYING WS-J FROM 1 BY 1 UNTIL WS-J > 2.    
+ 2000-EXIT. EXIT.                                                 
+ 2500-DISPLAY-PARA.                                               
+     DISPLAY WS-PRODUCTS-NAME(WS-I, WS-J) ':'                     
+             WS-PRICE(WS-I, WS-J).                                
+ 2500-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+
+
+RUNJCL:
+
+
+***************************** Top of Data ******************************
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                                       
+//S1 EXEC PGM=ARRYPGM2                                                  
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                             
+//*INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.BILL,DISP=SHR                     
+//*INDD2 DD DSN=ADCDI.SAKSHI.BILL.KSDS.CLUSTER,DISP=OLD                 
+//SYSOUT DD SYSOUT=*                                                    
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSIN DD *                                                            
+C001                                                                    
+EGG                                                                     
+03600                                                                   
+MILK                                                                    
+02300                                                                   
+C002                                                                    
+CHEES                                                                   
+07200                                                                   
+CURD                                                                    
+03400                                                                   
+C003                                                                    
+RESIN                                                                   
+31200                                                                   
+PEA                                                                     
+06600                                                                   
+/*                                                                      
+**************************** Bottom of Data ****************************
+
+
+SPOOL OUTPUT:
+
+********************************* TOP OF DATA **********************************
+AARYPGM2 STARTED                                                                
+STORE ID:C001                                                                   
+EGG  :03600                                                                     
+MILK :02300                                                                     
+STORE ID:C002                                                                   
+CHEES:07200                                                                     
+CURD :03400                                                                     
+STORE ID:C003                                                                   
+RESIN:31200                                                                     
+PEA  :06600                                                                     
+******************************** BOTTOM OF DATA ********************************

@@ -1,0 +1,158 @@
+*********************** Top of Data ******************************
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM06.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+******************************************************************
+*READ TRANS1 FILE AND CONSOLIDATE ALL TRANSACTION DEPENDS ON CARD 
+*NUMBER AND WRITE IT TO TRANS2 FILE.                              
+******************************************************************
+                                                                  
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT TRAN1FIL ASSIGN TO INDD                               
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS MODE IS SEQUENTIAL                                    
+     FILE STATUS IS WS-FS1.                                       
+                                             
+     SELECT TRAN2FIL ASSIGN TO OUTDD         
+     ORGANIZATION IS SEQUENTIAL              
+     ACCESS MODE IS SEQUENTIAL               
+     FILE STATUS IS WS-FS2.                  
+                                             
+ DATA DIVISION.                              
+ FILE SECTION.                               
+ FD TRAN1FIL                                 
+     LABEL RECORDS ARE STANDARD.             
+ COPY TRANFIL.                               
+ FD TRAN2FIL                                 
+     LABEL RECORDS ARE STANDARD.             
+ COPY TRAN2FIL.                              
+                                             
+ WORKING-STORAGE SECTION.                    
+ 01 WS-FS1                PIC X(2).          
+ 01 WS-FS2                PIC X(2).          
+ 01 WS-END-OF-FIL         PIC X(1).          
+ 01 WS-TRAN-BUF           PIC S9(5)V9(2).            
+ 01 WS-CARD-BUF           PIC X(5).                  
+ 01 WS-IN-REC             PIC 9(2).                  
+ 01 WS-OUT-REC            PIC 9(2).                  
+                                                     
+ PROCEDURE DIVISION.                                 
+ 0000-MAIN-PARA.                                     
+     DISPLAY 'CBLPGM06 STARTED.'.                    
+     PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.    
+     PERFORM 2000-READ-PARA THRU 2000-EXIT.          
+     PERFORM 3100-LOGIC-PARA THRU 3100-EXIT UNTIL    
+                              WS-END-OF-FIL = 'Y'.   
+     PERFORM 3120-WRITE-PARA THRU 3120-EXIT.         
+     CLOSE TRAN1FIL.                                 
+     CLOSE TRAN2FIL.                                 
+     DISPLAY 'TOTAL INPUT REC:' WS-IN-REC.           
+     DISPLAY 'TOTAL OUTPTU REC:' WS-OUT-REC.         
+     STOP RUN.                                       
+                                                     
+ 1000-INITIALIZE-PARA.                                      
+     MOVE SPACE TO WS-FS1,                                  
+                   WS-FS2.                                  
+     MOVE 'N' TO WS-END-OF-FIL.                             
+     MOVE ZERO TO WS-IN-REC,                                
+                  WS-OUT-REC,                               
+                  WS-TRAN-BUF.                              
+     OPEN INPUT TRAN1FIL.                                   
+     IF WS-FS1 = '00'                                       
+        CONTINUE                                            
+     ELSE                                                   
+        DISPLAY 'ERROR IN OPENING INPUT FILE:' WS-FS1       
+     END-IF.                                                
+     OPEN OUTPUT TRAN2FIL.                                  
+     IF WS-FS2 = '00'                                       
+        CONTINUE                                            
+     ELSE                                                   
+        DISPLAY 'ERROR IN OPENING OUTPUT FILE:' WS-FS2      
+     END-IF.                                                
+     INITIALIZE WS-TRAN-LAYOUT, WS-TRAN.                       
+     READ TRAN1FIL                                             
+         AT END                                                
+         MOVE 'Y' TO WS-END-OF-FIL.                            
+     IF WS-FS1 = '00'                                          
+       ADD +1 TO WS-IN-REC                                     
+     END-IF.                                                   
+     COMPUTE TOTAL-DUE-AMOUNT = TRANS-AMOUNT OF WS-TRAN-LAYOUT 
+                                + WS-TRAN-BUF.                 
+     MOVE CARD-NUMBER OF WS-TRAN-LAYOUT TO WS-CARD-BUF.        
+     MOVE TRANS-AMOUNT OF WS-TRAN-LAYOUT  TO WS-TRAN-BUF.      
+ 1000-EXIT. EXIT.                                              
+                                                               
+ 2000-READ-PARA.                                               
+     READ TRAN1FIL                                             
+         AT END                                                
+         MOVE 'Y' TO WS-END-OF-FIL.                            
+     IF WS-FS1 = '00'                                          
+       ADD +1 TO WS-IN-REC                                     
+     ELSE                                                       
+       IF WS-FS1 = '10'                                         
+       DISPLAY 'END OF FILE.'                                   
+     ELSE                                                       
+       DISPLAY 'ERROR IN OPENING INPUT FILE:' WS-FS1.           
+ 2000-EXIT. EXIT.                                               
+                                                                
+ 3100-LOGIC-PARA.                                               
+     IF CARD-NUMBER OF WS-TRAN-LAYOUT = WS-CARD-BUF             
+     COMPUTE TOTAL-DUE-AMOUNT = TRANS-AMOUNT OF WS-TRAN-LAYOUT  
+                                + WS-TRAN-BUF                   
+     MOVE CARD-NUMBER OF WS-TRAN-LAYOUT TO WS-CARD-BUF          
+     MOVE TRANS-AMOUNT OF WS-TRAN-LAYOUT  TO WS-TRAN-BUF        
+     ELSE                                                       
+     PERFORM 3120-WRITE-PARA THRU 3120-EXIT                     
+     MOVE ZERO TO TOTAL-DUE-AMOUNT                              
+     MOVE TOTAL-DUE-AMOUNT TO WS-TRAN-BUF                       
+     COMPUTE TOTAL-DUE-AMOUNT = TRANS-AMOUNT OF WS-TRAN-LAYOUT  
+                                + WS-TRAN-BUF                   
+     MOVE CARD-NUMBER OF WS-TRAN-LAYOUT TO WS-CARD-BUF            
+     MOVE TRANS-AMOUNT OF WS-TRAN-LAYOUT  TO WS-TRAN-BUF          
+     END-IF.                                                      
+      PERFORM 2000-READ-PARA THRU 2000-EXIT.                      
+ 3100-EXIT. EXIT.                                                 
+                                                                  
+ 3120-WRITE-PARA.                                                 
+     MOVE WS-CARD-BUF TO                                          
+                  CARD-NUMBER OF WS-TRAN.                         
+     WRITE WS-TRAN.                                               
+      IF WS-FS2 = '00'                                            
+         ADD +1 TO WS-OUT-REC                                     
+      ELSE                                                        
+      DISPLAY 'ERROR IN WRITING RECORD:' WS-FS2                   
+      END-IF.                                                     
+ 3120-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+
+
+copybook:
+
+tran2fil:
+
+*********************** Top of Data *****
+ 01 WS-TRAN.                             
+    05 CARD-NUMBER        PIC X(5).      
+    05 TOTAL-DUE-AMOUNT   PIC S9(5)V9(2).
+********************** Bottom of Data ***
+
+runjcl:
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI                               
+//S1 EXEC PGM=CBLPGM06                                          
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR                     
+//INDD DD DSN=ADCDI.SAKSHI.T11.CARD.TRANS1,DISP=SHR             
+//OUTDD DD DSN=ADCDI.SAKSHI.T11.CARD.TRANS2,                    
+//         DISP=(NEW,CATLG,DELETE),                             
+//         SPACE=(TRK,(1,1),RLSE),                              
+//         DCB=(LRECL=12,BLKSIZE=120,RECFM=FB),                 
+//         VOL=SER=USR001                                       
+//SYSOUT DD SYSOUT=*                                            
+//SYSPRINT DD SYSOUT=*                                          
+/*                                                              
+                                                                

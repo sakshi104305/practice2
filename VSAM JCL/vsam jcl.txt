@@ -1,0 +1,126 @@
+ESDS DEFINE:
+
+
+//CRTESDS JOB 123,'VSAM CREATION',CLASS=A,MSGLEVEL=(1,1),        
+//            NOTIFY=&SYSUID                                     
+//STEP010 EXEC PGM=IDCAMS                                        
+//SYSPRINT DD SYSOUT=*                                           
+//SYSOUT DD SYSOUT=*                                             
+//SYSIN DD *                                                     
+  DEFINE CLUSTER(NAME(ADCDI.SAKSHI.ESDS.CLUSTER) -               
+  RECSZ(80,80) -                                                 
+  CISZ(2048) -                                                   
+  TRACKS(1,1) -                                                  
+  FREESPACE(1,1) -                                               
+  VOLUME(USR001) -                                               
+  NONINDEXED)-                                                   
+  DATA(NAME(ADCDI.SAKSHI.ESDS.DATA))                             
+/*                                                               
+//                                                               
+
+PS TO ESDS LOAD:
+
+//PSTOESDS JOB 123,'PS TO ESDS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),      
+//            NOTIFY=&SYSUID                                            
+//STEP010 EXEC PGM=IDCAMS                                               
+//DD1 DD DSN=ADCDI.SAKSHI.T11.CARD.FILE1,DISP=SHR                       
+//DD2 DD DSN=ADCDI.SAKSHI.ESDS.CLUSTER,                                 
+//      DISP=OLD                                                        
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSOUT DD SYSOUT=*                                                    
+//SYSIN DD *                                                            
+  REPRO  -                                                              
+  INFILE(DD1) -                                                         
+  OUTFILE(DD2)                                                          
+/*                                                                      
+//                                                                      
+**************************** Bottom of Data ****************************
+
+
+KSDS DEFINE:
+
+//CRTKSDS JOB 123,'CREATE KSDS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),      
+//            NOTIFY=&SYSUID                                            
+//STEP010 EXEC PGM=IDCAMS                                               
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSOUT DD SYSOUT=*                                                    
+//SYSIN DD *                                                            
+  DELETE ADCDI.SAKSHI.KSDS.CLUSTER                                      
+  SET MAXCC=00                                                          
+  DEFINE CLUSTER(NAME(ADCDI.SAKSHI.KSDS.CLUSTER) -                      
+  RECSZ(55,55)  -                                                       
+  CISZ(2048) -                                                          
+  FREESPACE(1,1) -                                                      
+  TRACKS(1,1) -                                                         
+  KEY(5,0) -                                                            
+  VOLUME(USR001)-                                                       
+  INDEXED)-                                                             
+  DATA(NAME(ADCDI.SAKSHI.KSDS.DATA))  -                                 
+  INDEX(NAME(ADCDI.SAKSHI.KSDS.INDEX))                                  
+/*
+//
+
+
+PS TO KSDS:
+
+//PSTOKSDS JOB 123,'PS TO KSDS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),     
+//            NOTIFY=&SYSUID                                           
+//STEP010 EXEC PGM=IDCAMS                                              
+//DD1 DD DSN=ADCDI.SAKSHI.T11.CARD.FILE1,DISP=SHR                      
+//DD2 DD DSN=ADCDI.SAKSHI.KSDS.CLUSTER,DISP=OLD                        
+//SYSPRINT DD SYSOUT=*                                                 
+//SYSOUT DD SYSOUT=*                                                   
+//SYSIN DD *                                                           
+  REPRO -                                                              
+  INFILE(DD1) -                                                        
+  OUTFILE(DD2)                                                         
+/*                                                                     
+//                                                                     
+**************************** Bottom of Data ***************************
+
+
+
+RRDS DEFINE:
+
+//ADCDIR  JOB 123,'CREATE RRDS',CLASS=A,NOTIFY=&SYSUID                
+//STEP010 EXEC PGM=IDCAMS                                             
+//SYSPRINT DD SYSOUT=*                                                
+//SYSOUT DD SYSOUT=*                                                  
+//SYSIN DD *                                                          
+  DELETE ADCDI.SAKSHI.RRDS.CLUSTER                                    
+  SET MAXCC=00                                                        
+  DEFINE CLUSTER(NAME(ADCDI.SAKSHI.RRDS.CLUSTER)  -                   
+  RECSZ(55,55) -                                                      
+  CISZ(596) -                                                         
+  FREESPACE(1,1) -                                                    
+  TRACKS(1,1) -                                                       
+  VOLUME(USR001) -                                                    
+  NUMBERED)  -                                                        
+  DATA(NAME(ADCDI.SAKSHI.RRDS.DATA))                                  
+/*                                                                    
+//                                                                    
+
+PS TO RRDS:
+
+//ADCDIR JOB 123,'PS TO RRDS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),        
+//            NOTIFY=&SYSUID                                            
+//STEP010 EXEC PGM=IDCAMS                                               
+//DD1 DD DSN=ADCDI.SAKSHI.T11.CARD.FILE1,DISP=SHR                       
+//DD2 DD DSN=ADCDI.SAKSHI.RRDS.CLUSTER,DISP=OLD                         
+//SYSPRINT DD SYSOUT=*                                                  
+//SYSOUT DD SYSOUT=*                                                    
+//SYSIN DD *                                                            
+  REPRO  -                                                              
+  INFILE(DD1)  -                                                        
+  OUTFILE(DD2)                                                          
+/*                                                                      
+//                                                                      
+**************************** Bottom of Data ****************************
+
+LISTCAT TSO COMMAND:
+
+in front of dataset:
+NOTE: IT WILL overlap dataset name. thats okay.
+
+LISTCAT ENTRIES(/) ALL   
+

@@ -1,0 +1,161 @@
+000001        ID DIVISION.                                                    
+000002        PROGRAM-ID. CRADPGM2.                                           
+000003        AUTHOR. SAKSHI.                                                 
+000004        DATE-WRITTEN. TODAY.                                            
+000005        DATE-COMPILED. TODAY.                                           
+000006                                                                        
+000007       ************************************************************     
+000008       *JOB TO DISPLAY VALID INPUT AND REMOVE DUPLICATE INPUT.          
+000009       *THEN AGAIN FILTER FOR RECORDS WHOSE DUE AMOUNT IS MORE OR       
+000010       * EQUAL TO 75% OF TOTAL LIMIT.                                   
+000011       ********************************************************         
+000012                                                                        
+000013        ENVIRONMENT DIVISION.                                           
+000014        INPUT-OUTPUT SECTION.                                           
+000015        FILE-CONTROL.                                                   
+000016                                                                        
+000017        DATA DIVISION.                                        
+000018        WORKING-STORAGE SECTION.                              
+000019        01 CARD-DET-IN.                                       
+000020           05 CARD-NUMBER     PIC X(10).                      
+000021           05 CUST-NAME       PIC X(10).                      
+000022           05 CARD-LIMIT      PIC 9(5)V9(2).                  
+000023           05 CARD-DUE        PIC 9(5)V9(2).                  
+000024                                                              
+000025        01 CARD-DET-OUT.                                      
+000026           05 CARD-NUMBER     PIC X(10).                      
+000027           05 CUST-NAME       PIC X(10).                      
+000028           05 CARD-LIMIT      PIC 9(5)V9(2).                  
+000029           05 CARD-DUE        PIC 9(5)V9(2).                  
+000030                                                              
+000031        01 CARD-NUM-BUF       PIC X(10) VALUE SPACE.          
+000032        01 WS-ABENDPGM        PIC X(8) VALUE 'ABENDPGM'.      
+000033        01 WS-IN-REC          PIC 9(2).                       
+000034        01 WS-OUT-REC         PIC 9(2).                       
+000035        01 WS-VALID-IN        PIC X(1).                       
+000036        01 WS-END-OF-REC      PIC X(1).                      
+000037                                                             
+000038        PROCEDURE DIVISION.                                  
+000039        0000-MAIN-PARA.                                      
+000040            DISPLAY 'CARDPGM2 STARTED'.                      
+000041            PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT.     
+000042            PERFORM 2000-GET-PARA THRU 2000-EXIT.            
+000043            PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL   
+000044                           WS-END-OF-REC = 'Y'.              
+000045            DISPLAY 'TOTAL INPUT REC: ' WS-IN-REC.           
+000046            DISPLAY 'TOTAL OUTPUT REC: ' WS-OUT-REC.         
+000047            STOP RUN.                                        
+000048                                                             
+000049        1000-INITIALIZE-PARA.                                
+000050            INITIALIZE CARD-DET-OUT.                         
+000051            INITIALIZE WS-IN-REC, WS-OUT-REC.                
+000052            MOVE 'N' TO WS-END-OF-REC.                       
+000053        1000-EXIT.EXIT.                                      
+000054                                                             
+000055        2000-GET-PARA.                                               
+000056            ACCEPT CARD-NUMBER OF CARD-DET-IN.                       
+000057            ACCEPT CUST-NAME OF CARD-DET-IN.                         
+000058            ACCEPT CARD-LIMIT OF CARD-DET-IN.                        
+000059            ACCEPT CARD-DUE OF CARD-DET-IN.                          
+000060            ADD +1 TO WS-IN-REC.                                     
+000061        2000-EXIT.EXIT.                                              
+000062                                                                     
+000063        3000-PROCESS-PARA.                                           
+000064            MOVE 'Y' TO WS-VALID-IN.                                 
+000065            PERFORM 3100-AUDIT-PARA THRU 3100-EXIT.                  
+000066            IF WS-VALID-IN = 'Y'                                     
+000067       *       CARD-DUE OF CARD-DET-IN >= (0.75 * CARD-LIMIT OF      
+000068       *                         CARD-DET-IN)                        
+000069            IF CARD-NUMBER OF CARD-DET-IN = CARD-NUM-BUF             
+000070               NEXT SENTENCE                                         
+000071            ELSE                                                     
+000072            IF CARD-DUE OF CARD-DET-IN >= (0.75 * CARD-LIMIT OF      
+000073                                 CARD-DET-IN)                        
+000074       *    MOVE CARD-NUMBER OF CARD-DET-IN TO CARD-NUM-BUF     
+000075            PERFORM 3200-MOVE-DIS-PARA THRU 3200-EXIT           
+000076            END-IF                                              
+000077            END-IF                                              
+000078            END-IF.                                             
+000079            ACCEPT WS-END-OF-REC.                               
+000080            IF WS-END-OF-REC= 'N'                               
+000081            PERFORM 2000-GET-PARA THRU 2000-EXIT                
+000082            END-IF.                                             
+000083        3000-EXIT.                                              
+000084        3100-AUDIT-PARA.                                        
+000085            IF CARD-NUMBER OF CARD-DET-IN = SPACE               
+000086             MOVE 'N' TO WS-VALID-IN                            
+000087             GO TO 3100-EXIT                                    
+000088            END-IF.                                             
+000089            IF CUST-NAME OF CARD-DET-IN = SPACE                 
+000090            MOVE 'N' TO WS-VALID-IN                             
+000091            GO TO 3100-EXIT                                     
+000092            END-IF.                                             
+000093            IF CARD-LIMIT OF CARD-DET-IN < 0                        
+000094            MOVE 'N' TO WS-VALID-IN                                 
+000095            GO TO 3100-EXIT                                         
+000096            END-IF.                                                 
+000097            IF CARD-DUE OF CARD-DET-IN < 0                          
+000098            MOVE 'N' TO WS-VALID-IN                                 
+000099            GO TO 3100-EXIT                                         
+000100            END-IF.                                                 
+000101        3100-EXIT.EXIT.                                             
+000102                                                                    
+000103        3200-MOVE-DIS-PARA.                                         
+000104            MOVE CARD-NUMBER OF CARD-DET-IN TO                      
+000105                    CARD-NUMBER OF CARD-DET-OUT.                    
+000106            MOVE CARD-NUMBER OF CARD-DET-IN TO CARD-NUM-BUF         
+000107            MOVE CUST-NAME OF CARD-DET-IN TO                        
+000108                    CUST-NAME OF CARD-DET-OUT.                      
+000109            MOVE CARD-LIMIT OF CARD-DET-IN TO                       
+000110                    CARD-LIMIT OF CARD-DET-OUT.                     
+000111            MOVE CARD-DUE OF CARD-DET-IN TO      
+000112                    CARD-DUE OF CARD-DET-OUT.                            
+000113            DISPLAY 'VALID REC:' CARD-NUMBER OF CARD-DET-OUT,' ',        
+000114                 CUST-NAME OF CARD-DET-OUT,' ',                          
+000115                 CARD-LIMIT  OF CARD-DET-OUT,' ',                        
+000116                 CARD-DUE OF CARD-DET-OUT.                               
+000117            ADD +1 TO WS-OUT-REC.                                        
+000118        3200-EXIT.EXIT.                                                  
+****** **************************** Bottom of Data ****************************
+
+
+
+runjcl:
+
+000001 //ADCDIC JOB CLASS=A,NOTIFY=ADCDI                   
+000002 //S1 EXEC PGM=CARDPGM2                              
+000003 //STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=OLD         
+000004 //SYSPRINT DD SYSOUT=*                              
+000005 //SYSOUT DD SYSOUT=*                                
+000006 //SYSIN DD *                                        
+000007 C1111111                                            
+000008 SAKSHI                                              
+000009 3400000                                             
+000010 0005400                                             
+000011 N                                                   
+000012 C2222222                                            
+000013 ANAM                                                
+000014 1000000                                             
+000015 3450340                                             
+000016 N                                                   
+000017 C2222222           
+000018 PRACHI             
+000019 4500000            
+000020 3375400            
+000021 N                  
+000022 34347T98           
+000023                    
+000024 8954543            
+000025 0034300            
+000026 N                  
+000027 C3333333           
+000028 SANYAM             
+000029 9800030            
+000030 5400300            
+000031 N                  
+000032 C4444444           
+000033 SANA               
+000034 4372729            
+000035 2000000            
+000036 Y                                                                       
+****** **************************** Bottom of Data ****************************                   

@@ -1,0 +1,302 @@
+ ID DIVISION.                                                     
+ PROGRAM-ID. CBLPGM01.                                            
+ AUTHOR. SAKSHI.                                                  
+ DATE-WRITTEN. TODAY.                                             
+ DATE-COMPILED. TODAY.                                            
+                                                                  
+***************************************************************** 
+*PROGRAM TO ACCEPT DATA AND WRITE IT IN A FILE                    
+*ANIL POLSANI T11-SERIES- 1ST PROGRAM                             
+***************************************************************** 
+ ENVIRONMENT DIVISION.                                            
+ INPUT-OUTPUT SECTION.                                            
+ FILE-CONTROL.                                                    
+     SELECT CUSTFIL ASSIGN TO INDD1                               
+     ORGANIZATION IS SEQUENTIAL                                   
+     ACCESS MODE IS SEQUENTIAL                                    
+     FILE STATUS IS WS-CUST-STA.                                  
+	 
+ DATA DIVISION.                               
+ FILE SECTION.                                
+ FD CUSTFIL                                   
+     LABEL RECORD ARE STANDARD.               
+ COPY MASTCPY.                                
+                                              
+ WORKING-STORAGE SECTION.                     
+ 01 CUST-DET-IN.                              
+     05 CARD-NUMBER          PIC X(5).        
+     05 CUST-NAME            PIC X(10).       
+     05 CARD-LIMIT           PIC 9(5)V9(2).   
+     05 PREVIOUS-DUE         PIC S9(5)V9(2).  
+     05 PREVIOUS-DUE-PAID    PIC S9(5)V9(2).  
+     05 CARD-TYPE            PIC X(1).        
+        88 SILVER            VALUE '1'.       
+        88 GOLD              VALUE '2'.       
+        88 PLATINUM          VALUE '3'.       
+     05 REWARD-POINT-CODE    PIC X(1).        
+        88 REWARD-100-1      VALUE 'A'.       
+        88 REWARD-200-1      VALUE 'B'.           
+        88 REWARD-300-1      VALUE 'C'.           
+     05 CARD-EXPIRE-DATE     PIC X(8).            
+     05 CUST-ACTIVE-IND      PIC X(1).            
+        88 ACIVE             VALUE 'A'.           
+        88 INACTIVE          VALUE 'I'.           
+     05 LAST-BILL-DATE       PIC X(8).            
+                                                  
+     05 WS-IN-REC            PIC 9(2).            
+     05 WS-OUT-REC           PIC 9(2).            
+     05 WS-CUST-STA          PIC 9(2).            
+     05 WS-END-OF-REC        PIC X(1).            
+     05 WS-ABENDPGM          PIC X(8).            
+                                                  
+ PROCEDURE DIVISION.                              
+ 0000-MAIN-PARA.                                  
+     DISPLAY 'CBLPGM01 STARTED'.                  
+     PERFORM 1000-INITIALIZE-PARA THRU 1000-EXIT. 
+     PERFORM 2000-ACCEPT-PARA THRU 2000-EXIT.     
+     PERFORM 3000-PROCESS-PARA THRU 3000-EXIT UNTIL           
+                           WS-END-OF-REC = 'Y'.               
+     CLOSE CUSTFIL.                                           
+     DISPLAY 'TOTAL INPUT RECORDS:' WS-IN-REC.                
+     DISPLAY 'TOTAL OUTPUT RECORDS:' WS-OUT-REC.              
+     STOP RUN.                                                
+                                                              
+ 1000-INITIALIZE-PARA.                                        
+     OPEN OUTPUT CUSTFIL.                                     
+        IF WS-CUST-STA = '00'                                 
+          CONTINUE                                            
+        ELSE                                                  
+          DISPLAY 'ERROR IN OPENING OUTPUT FILE:' WS-CUST-STA.
+     INITIALIZE CUST-DET-IN.                                  
+     MOVE ZERO TO WS-IN-REC,                                  
+                  WS-OUT-REC,                                 
+                  WS-CUST-STA.                                
+ 1000-EXIT. EXIT.                                             
+ 2000-ACCEPT-PARA.                                            
+     ACCEPT CARD-NUMBER OF CUST-DET-IN.                
+     ACCEPT CUST-NAME OF CUST-DET-IN.                  
+     ACCEPT CARD-LIMIT OF CUST-DET-IN.                 
+     ACCEPT PREVIOUS-DUE OF CUST-DET-IN.               
+     ACCEPT PREVIOUS-DUE-PAID OF CUST-DET-IN.          
+     ACCEPT CARD-TYPE OF CUST-DET-IN.                  
+     ACCEPT REWARD-POINT-CODE OF CUST-DET-IN.          
+     ACCEPT CARD-EXPIRE-DATE OF CUST-DET-IN.           
+     ACCEPT CUST-ACTIVE-IND OF CUST-DET-IN.            
+     ACCEPT LAST-BILL-DATE OF CUST-DET-IN.             
+     ADD +1 TO WS-IN-REC.                              
+ 2000-EXIT. EXIT.                                      
+                                                       
+ 3000-PROCESS-PARA.                                    
+     PERFORM 3100-MOVE-WRITE-PARA THRU 3100-EXIT.      
+     ACCEPT WS-END-OF-REC.                             
+     EVALUATE WS-END-OF-REC                            
+         WHEN 'N'                                      
+         PERFORM 2000-ACCEPT-PARA THRU 2000-EXIT       
+         WHEN OTHER                                 
+         GO TO 3000-EXIT                            
+     END-EVALUATE.                                  
+ 3000-EXIT. EXIT.                                   
+                                                    
+ 3100-MOVE-WRITE-PARA.                              
+     MOVE CARD-NUMBER OF CUST-DET-IN TO             
+              CARD-NUMBER OF WS-MASTER-LAYOUT.      
+     MOVE CUST-NAME OF CUST-DET-IN TO               
+              CUST-NAME OF WS-MASTER-LAYOUT.        
+     MOVE CARD-LIMIT OF CUST-DET-IN TO              
+              CARD-LIMIT OF WS-MASTER-LAYOUT.       
+     MOVE PREVIOUS-DUE OF CUST-DET-IN TO            
+              PREVIOUS-DUE OF WS-MASTER-LAYOUT.     
+     MOVE PREVIOUS-DUE-PAID OF CUST-DET-IN TO       
+              PREVIOUS-DUE-PAID OF WS-MASTER-LAYOUT.
+     MOVE CARD-TYPE OF CUST-DET-IN TO               
+              CARD-TYPE OF WS-MASTER-LAYOUT.        
+     MOVE REWARD-POINT-CODE OF CUST-DET-IN TO       
+              REWARD-POINT-CODE OF WS-MASTER-LAYOUT.              
+     MOVE CARD-EXPIRE-DATE OF CUST-DET-IN TO                      
+              CARD-EXPIRE-DATE OF WS-MASTER-LAYOUT.               
+     MOVE CUST-ACTIVE-IND OF CUST-DET-IN TO                       
+              CUST-ACTIVE-IND OF WS-MASTER-LAYOUT.                
+     MOVE LAST-BILL-DATE OF CUST-DET-IN TO                        
+              LAST-BILL-DATE OF WS-MASTER-LAYOUT.                 
+     WRITE WS-MASTER-LAYOUT.                                      
+     EVALUATE WS-CUST-STA                                         
+          WHEN '00'                                               
+          ADD +1 TO WS-OUT-REC                                    
+          WHEN OTHER                                              
+          DISPLAY 'ERROR IN WRITING FILE:' WS-CUST-STA            
+     END-EVALUATE.                                                
+ 3100-EXIT. EXIT.                                                 
+********************** Bottom of Data ****************************
+                                                                  
+
+JCL:
+
+//ADCDIR JOB CLASS=A,NOTIFY=ADCDI               
+//S1 EXEC PGM=CBLPGM01                          
+//STEPLIB DD DSN=ADCDI.SAKSHI.LOAD,DISP=SHR     
+//INDD1 DD DSN=ADCDI.SAKSHI.T11.CARD.FILE1,     
+//         DISP=(NEW,CATLG,DELETE),             
+//         SPACE=(TRK,(1,1),RLSE),              
+//         DCB=(LRECL=55,BLKSIZE=550,RECFM=FB), 
+//         VOL=SER=USR001                       
+//SYSOUT DD SYSOUT=*                            
+//SYSPRINT DD SYSOUT=*                          
+//SYSIN DD *                                    
+CC001                                           
+ANIL POLSANI                                    
+5000000                                         
+0000000                                         
+0000000                                         
+1                                               
+A                                               
+20221231      
+A             
+20220820      
+N             
+CC002         
+RAMA          
+5000000       
+2000000       
+2000000       
+1             
+A             
+20221231      
+I             
+20220920      
+N             
+CC003         
+RAKESH        
+5000000       
+1000000       
+0800000   
+1         
+A         
+20221231  
+I         
+20220920  
+N         
+CC004     
+RAMESH    
+5000000   
+1500000   
+1500000   
+2         
+B         
+20221231  
+I         
+20220920  
+N         
+CC005     
+ABHI          
+5000000       
+0000000       
+0000000       
+2             
+B             
+20221231      
+A             
+20220720      
+N             
+CC006         
+RAHUL         
+5000000       
+0000000       
+0000000       
+3             
+C             
+20221231      
+A             
+20220720    
+N           
+CC007       
+SHIVA       
+5000000     
+0000000     
+0000000     
+3           
+C           
+20221231    
+A           
+20220720    
+N           
+CC008       
+ARUN        
+5000000     
+1200000     
+0600000     
+3           
+C        
+20221231 
+I        
+20220920 
+N        
+CC009    
+SUMANTH  
+5000000  
+1300000  
+1200000  
+2        
+B        
+20221231 
+I        
+20220920 
+N        
+CC010    
+SHYAM    
+5000000  
+0000000   
+0000000   
+2         
+B         
+20221231  
+A         
+20220820  
+N         
+CC011     
+LAXMAN    
+5000000   
+0000000   
+0000000   
+X         
+B         
+20221231  
+A         
+20220720  
+N         
+CC012    
+KUSTER   
+5000000  
+0000000  
+0000000  
+1        
+A        
+20221231 
+A        
+20220620 
+N        
+CC013    
+RAZAK    
+5000000  
+0000000  
+0000000  
+X        
+B        
+20221231 
+A                                                                       
+20220720                                                                
+N                                                                       
+CC014                                                                   
+SHRINU                                                                  
+5000000                                                                 
+0000000                                                                 
+0000000                                                                 
+1                                                                       
+A                                                                       
+20221231                                                                
+A                                                                       
+20220620                                                                
+Y                                                                       
+**************************** Bottom of Data ****************************
+                                                                        
+																		
+		
